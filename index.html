@@ -455,11 +455,11 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
   <span class="header-title">塞子计划</span>
 </div>
 
-<!-- 行动代号栏 -->
+<!-- 用户名栏 -->
 <div id="op-bar" style="background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:10px;">
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-  <span style="font-size:12px;color:var(--text-3);flex-shrink:0;">行动代号</span>
-  <input id="sync-input" placeholder="输入代号加入行程，队友用同一代号共享计划…" maxlength="20"
+  <span style="font-size:12px;color:var(--text-3);flex-shrink:0;">用户名</span>
+  <input id="sync-input" placeholder="输入用户名，队友输同一个名字共享装备计划…" maxlength="20"
     style="flex:1;background:transparent;border:none;color:var(--text);font-size:14px;font-weight:600;outline:none;min-width:0;"
     onkeydown="if(event.key==='Enter')confirmUsername()"
     onfocus="document.getElementById('op-bar').style.borderBottomColor='var(--accent)'"
@@ -567,7 +567,7 @@ function validUsername(s) {
 async function initSync() {
   const stored = localStorage.getItem('cam-sync-code');
   if (!stored) {
-    // 首次使用，强制输入行动代号
+    // 首次使用，强制输入用户名
     document.getElementById('sync-input').focus();
     return;
   }
