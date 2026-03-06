@@ -453,12 +453,6 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 <div class="header">
   <div class="logo">🪨</div>
   <span class="header-title">塞子计划</span>
-  <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    <input id="username-input" placeholder="用户名" maxlength="20"
-      style="background:transparent;border:none;color:var(--text-2);font-size:13px;font-weight:600;outline:none;width:90px;text-align:right;"
-      onchange="saveUsername(this.value.trim())"/>
-  </div>
 </div>
 
 <!-- 行动代号栏 -->
@@ -587,7 +581,7 @@ async function initSync() {
       if (remote?.routes) {
         state = remote;
         renderRoutes(); renderTeam(); renderInlineSections();
-        initUsername();
+        
       }
     }
   } catch(e) {}
@@ -634,18 +628,7 @@ setTimeout(() => {
 
 function closeSyncModal() {}
 
-function saveUsername(name) {
-  state.username = name;
-  save();
-}
 
-function initUsername() {
-  const input = document.getElementById('username-input');
-  if (!input) return;
-  const name = state.username || localStorage.getItem('cam-username') || '';
-  input.value = name;
-  if (name) state.username = name;
-}
 
 async function confirmUsername() {
   const input = document.getElementById('sync-input');
@@ -672,7 +655,7 @@ async function confirmUsername() {
     setHeaderUser(name);
     closeSyncModal();
     renderRoutes(); renderTeam(); renderInlineSections();
-    initUsername();
+    
     errEl.textContent = '';
     if (isNew) {
       // 新行动：把本地数据推上去
@@ -1248,7 +1231,7 @@ renderTeam();
 renderInlineSections();
 loadCommunity();
 initSync();
-initUsername();
+
 </script>
 </body>
 </html>
