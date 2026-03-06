@@ -450,6 +450,13 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 </head>
 <body>
 
+<!-- 浏览器引导横幅 -->
+<div id="browser-guide" style="display:none;background:#1a1a0a;border-bottom:1px solid #3d3d00;padding:10px 16px;display:flex;align-items:center;gap:10px;">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+  <span style="font-size:13px;color:#fde68a;flex:1;">请点击右上角 <strong>···</strong> → 选择「在浏览器中打开」以获得完整体验</span>
+  <button onclick="document.getElementById('browser-guide').style.display='none'" style="background:transparent;border:none;color:#a16207;cursor:pointer;padding:2px 6px;font-size:16px;line-height:1;">✕</button>
+</div>
+
 <div class="header">
   <div class="logo">🪨</div>
   <span class="header-title">塞子计划</span>
@@ -1257,6 +1264,13 @@ function addMemberFromCommunity(doc) {
   renderInlineSections();
   showToast(`✓ 已添加「${doc.name}」到队员`);
 }
+
+// ── 浏览器检测 ─────────────────────────────────────────────
+(function() {
+  const ua = navigator.userAgent.toLowerCase();
+  const inApp = /micromessenger|qq\/|weibo|alipay|bytedance|toutiao|dingtalk|lark/.test(ua);
+  if (inApp) document.getElementById('browser-guide').style.display = 'flex';
+})();
 
 // ── Init ───────────────────────────────────────────────────
 load();
