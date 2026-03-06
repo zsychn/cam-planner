@@ -577,14 +577,23 @@ function renderInlineSummary() {
   const active = SIZES.filter(s => needed[s.id]);
   if (!active.length) { el.innerHTML = ''; return; }
   const total = active.reduce((s,c)=>s+needed[c.id],0);
+  const maxCount = Math.max(...SIZES.map(s => needed[s.id]||0));
+  const CHART_H = 60;
+
   el.innerHTML = `
     <hr class="div" style="margin:20px 0 16px">
-    <div class="sec-title">总清单 · 共 ${total} 个</div>
-    <div class="summary-chips" style="margin-bottom:0">
-      ${active.map(s=>`<div class="summary-chip" style="border-color:${s.color}35">
-        <div class="chip-count" style="color:${s.color}">${needed[s.id]}</div>
-        <div class="chip-label">${s.label}</div>
-      </div>`).join('')}
+    <div class="sec-title" style="margin-bottom:14px">总清单 · 共 ${total} 个</div>
+    <div style="display:flex;align-items:flex-end;gap:3px;padding:0 2px;">
+      ${SIZES.map(s => {
+        const count = needed[s.id] || 0;
+        const barH = count > 0 ? Math.max(6, Math.round((count/maxCount)*CHART_H)) : 3;
+        const on = count > 0;
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:0;">
+          <span style="font-size:11px;font-weight:800;color:${on?s.color:'transparent'};line-height:1;min-height:13px;">${on?count:''}</span>
+          <div style="width:100%;background:${s.color};height:${barH}px;border-radius:3px 3px 0 0;opacity:${on?0.9:0.13};transition:height 0.25s;"></div>
+          <span style="font-size:9px;color:${on?'var(--text-2)':'var(--text-3)'};text-align:center;line-height:1;">${s.abbr}</span>
+        </div>`;
+      }).join('')}
     </div>`;
 }
 
