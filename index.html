@@ -846,7 +846,7 @@ async function loadCommunity() {
 }
 
 function addFromCommunity(route) {
-  const newRoute = { id: uid(), name: route.name, sizes: { ...route.sizes }, collapsed: false };
+  const newRoute = { id: uid(), name: route.name, sizes: { ...route.sizes }, collapsed: true };
   state.routes.push(newRoute);
   save();
   // 切到线路 tab
