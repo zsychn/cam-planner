@@ -1140,7 +1140,6 @@ function renderPlan() {
 // ── Export ─────────────────────────────────────────────────
 async function exportImage() {
   showToast('生成截图中…');
-  const date = new Date().toLocaleDateString('zh-CN');
   try {
     const canvas = await html2canvas(document.body, {
       backgroundColor: '#0c0c0e',
@@ -1152,14 +1151,34 @@ async function exportImage() {
       windowWidth: document.documentElement.scrollWidth,
       windowHeight: document.documentElement.scrollHeight,
     });
-    const link = document.createElement('a');
-    link.download = `塞子计划_${date.replace(/\//g,'-')}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    showToast('✓ 已保存');
+    const dataUrl = canvas.toDataURL('image/png');
+    const ua = navigator.userAgent.toLowerCase();
+    const inWeChat = /micromessenger/.test(ua);
+    if (inWeChat) {
+      // 微信里无法用 <a download>，弹出图片让用户长按保存
+      showImagePreview(dataUrl);
+    } else {
+      const date = new Date().toLocaleDateString('zh-CN').replace(/\//g,'-');
+      const link = document.createElement('a');
+      link.download = `塞子计划_${date}.png`;
+      link.href = dataUrl;
+      link.click();
+      showToast('✓ 已保存');
+    }
   } catch(e) {
     showToast('截图失败，请手动截图');
   }
+}
+
+function showImagePreview(dataUrl) {
+  const mask = document.createElement('div');
+  mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+  mask.innerHTML = `
+    <p style="color:#fff;font-size:14px;margin:0;">长按图片保存到相册</p>
+    <img src="${dataUrl}" style="max-width:92vw;max-height:75vh;border-radius:8px;display:block;"/>
+    <button onclick="this.closest('div').remove()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:8px;padding:10px 28px;font-size:15px;cursor:pointer;">关闭</button>
+  `;
+  document.body.appendChild(mask);
 }
 
 // ── Toast ──────────────────────────────────────────────────
