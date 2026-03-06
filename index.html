@@ -463,7 +463,8 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 </div>
 
 <!-- 行程代号栏 -->
-<div id="op-bar" style="background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:9px 16px;">
+<div id="op-bar" style="background:var(--surface);border-bottom:1px solid var(--border);padding:0;">
+<div style="display:flex;align-items:center;gap:8px;padding:9px 16px 6px;">
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
   <input id="sync-input" placeholder="行程代号…" maxlength="30"
     style="flex:1;background:transparent;border:none;color:var(--accent);font-size:13px;font-weight:700;outline:none;min-width:0;"
@@ -484,6 +485,10 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
     分享
   </button>
+</div>
+<div style="padding:0 16px 8px;font-size:11px;color:var(--text-3);line-height:1.5;">
+  输入代号后「下载」可加载队友行程 · 自己规划好后「上传」共享 · 「分享」生成链接发给队友直接打开
+</div>
 </div>
 
 <div class="tabs">
