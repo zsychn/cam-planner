@@ -476,6 +476,7 @@ function chg(type, id, sid, delta) {
   if (type==='route') {
     const se = document.getElementById(`rsummary-${id}`);
     if (se) se.textContent = routeSummary(obj.sizes);
+    // update summary margin (collapsed state unchanged)
   }
 }
 
@@ -524,11 +525,8 @@ function renderRoutes() {
   }
   el.innerHTML = state.routes.map(r => `
     <div class="card">
-      <div class="row-header" style="margin-bottom:${r.collapsed?'0':'18px'}">
-        <div style="display:flex;align-items:baseline;gap:12px;flex:1;min-width:0;overflow:hidden;">
-          <input class="input-name" value="${esc(r.name)}" onchange="setRouteName(${r.id},this.value)" placeholder="线路名称"/>
-          <span id="rsummary-${r.id}" style="font-size:14px;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:1;letter-spacing:-.2px;">${routeSummary(r.sizes)}</span>
-        </div>
+      <div class="row-header" style="margin-bottom:8px">
+        <input class="input-name" value="${esc(r.name)}" onchange="setRouteName(${r.id},this.value)" placeholder="线路名称"/>
         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
           <button class="btn-share" id="rbtn-share-${r.id}" onclick="shareRoute(${r.id})" title="分享到社区">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
@@ -543,6 +541,7 @@ function renderRoutes() {
           </button>
         </div>
       </div>
+      <div id="rsummary-${r.id}" style="font-size:13px;font-weight:600;color:var(--text);letter-spacing:-.1px;margin-bottom:${r.collapsed?'0':'16px'};min-height:16px;">${routeSummary(r.sizes)}</div>
       <div id="rgrid-${r.id}" class="size-grid" style="display:${r.collapsed?'none':''}">${sizeGrid('route',r.id,r.sizes)}</div>
     </div>`).join('');
 }
