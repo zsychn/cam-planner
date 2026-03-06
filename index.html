@@ -462,10 +462,10 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
   <span class="header-title">塞子计划</span>
 </div>
 
-<!-- 行动代号栏 -->
+<!-- 行程代号栏 -->
 <div id="op-bar" style="background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:9px 16px;">
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-  <input id="sync-input" placeholder="行动代号…" maxlength="30"
+  <input id="sync-input" placeholder="行程代号…" maxlength="30"
     style="flex:1;background:transparent;border:none;color:var(--accent);font-size:13px;font-weight:700;outline:none;min-width:0;"
     onkeydown="if(event.key==='Enter')confirmUsername()"
     onfocus="document.getElementById('op-bar').style.borderBottomColor='var(--accent)'"
@@ -649,7 +649,7 @@ function getOpCode() {
 
 async function syncUpload() {
   const code = getOpCode();
-  if (!code) { showToast('请先输入行动代号'); return; }
+  if (!code) { showToast('请先输入行程代号'); return; }
   if (!validUsername(code)) { showToast('代号格式不对，3–20位字母/数字/中文'); return; }
   _syncCode = code;
   localStorage.setItem('cam-sync-code', code);
@@ -667,7 +667,7 @@ async function syncUpload() {
 
 async function syncDownload() {
   const code = getOpCode();
-  if (!code) { showToast('请先输入行动代号'); return; }
+  if (!code) { showToast('请先输入行程代号'); return; }
   if (!validUsername(code)) { showToast('代号格式不对，3–20位字母/数字/中文'); return; }
   _syncCode = code;
   localStorage.setItem('cam-sync-code', code);
@@ -716,7 +716,7 @@ async function confirmUsername() {
     if (isNew) {
       // 新行动：把本地数据推上去
       pushSync();
-      showToast(`✓ 行动「${name}」已创建`);
+      showToast(`✓ 行程「${name}」已创建`);
     } else {
       showToast(`✓ 已加入「${name}」，数据已同步`);
     }
