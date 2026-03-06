@@ -665,13 +665,20 @@ async function syncUpload() {
   _syncCode = code;
   localStorage.setItem('cam-sync-code', code);
   setHeaderUser(code);
+  const token = localStorage.getItem('cam-token-' + code) || undefined;
   try {
     const res = await fetch('/api/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, state }),
+      body: JSON.stringify({ code, state, token }),
     });
+    if (res.status === 409) {
+      showToast('❌ 该代号已被占用，换一个试试');
+      return;
+    }
     if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    if (data.token) localStorage.setItem('cam-token-' + code, data.token);
     showToast('✓ 已上传到云端');
   } catch(e) { showToast('上传失败：' + e.message); }
 }

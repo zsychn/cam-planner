@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    // GET /api/sync?code=xxx  → 拉取用户数据
+    // GET /api/sync?code=xxx  → 拉取数据
     if (req.method === 'GET') {
       const { code } = req.query;
       if (!code || code.length < 2) return res.status(400).json({ error: 'invalid code' });
@@ -29,15 +29,33 @@ export default async function handler(req, res) {
       return res.json({ state });
     }
 
-    // POST /api/sync  body: { code, state }  → 推送用户数据
+    // POST /api/sync  body: { code, state, token? }  → 推送数据
     if (req.method === 'POST') {
-      const { code, state } = req.body || {};
+      const { code, state, token } = req.body || {};
       if (!code || code.length < 2 || !state) return res.status(400).json({ error: 'invalid payload' });
 
+      // 检查代号是否已存在
+      const existing = await redis('POST', '', ['GET', `token:${code}`]);
+      if (existing.result) {
+        // 已存在：校验 token
+        if (!token || token !== existing.result) {
+          return res.status(409).json({ error: 'code_taken' });
+        }
+        // token 正确 → 允许更新，刷新 TTL
+        await redis('POST', '/pipeline', [
+          ['SET', `user:${code}`, JSON.stringify(state), 'EX', TTL],
+          ['EXPIRE', `token:${code}`, TTL],
+        ]);
+        return res.json({ ok: true });
+      }
+
+      // 新代号：生成 token，写入数据和 token
+      const newToken = Math.random().toString(36).slice(2) + Date.now().toString(36);
       await redis('POST', '/pipeline', [
-        ['SET', `user:${code}`, JSON.stringify(state), 'EX', TTL],
+        ['SET', `user:${code}`,    JSON.stringify(state), 'EX', TTL],
+        ['SET', `token:${code}`,   newToken,              'EX', TTL],
       ]);
-      return res.json({ ok: true });
+      return res.json({ ok: true, token: newToken });
     }
 
     res.status(405).json({ error: 'Method not allowed' });
