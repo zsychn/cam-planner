@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     // GET /api/sync?code=xxx  → 拉取用户数据
     if (req.method === 'GET') {
       const { code } = req.query;
-      if (!code || code.length < 6) return res.status(400).json({ error: 'invalid code' });
+      if (!code || code.length < 3) return res.status(400).json({ error: 'invalid code' });
 
       const d = await redis('POST', '', ['GET', `user:${code}`]);
       if (!d.result) return res.status(404).json({ error: 'not found' });

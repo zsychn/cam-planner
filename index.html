@@ -652,27 +652,34 @@ async function confirmUsername() {
   const errEl = document.getElementById('sync-error');
   const name = input.value.trim();
   if (!validUsername(name)) {
-    errEl.textContent = '代号 3–20 位，只能用字母/数字/中文/连字符';
+    errEl.textContent = '用户名 3–20 位，只能用字母/数字/中文/连字符';
     return;
   }
   errEl.textContent = '验证中…';
+  // 先清掉所有待推送的本地数据，防止覆盖远端
+  clearTimeout(_syncTimer);
   try {
     const res = await fetch(`/api/sync?code=${encodeURIComponent(name)}`);
+    const isNew = res.status === 404;
     if (res.ok) {
-      // 已有账号 → 登录并拉取数据
       const { state: remote } = await res.json();
-      if (remote?.routes) state = remote;
+      // 用远端数据替换本地
+      state = remote;
     }
-    // 404 → 新账号，直接用本地数据
     _syncCode = name;
     localStorage.setItem('cam-sync-code', name);
     localStorage.setItem('cam-planner-v1', JSON.stringify(state));
     setHeaderUser(name);
     closeSyncModal();
     renderRoutes(); renderTeam(); renderInlineSections();
-    pushSync();
     errEl.textContent = '';
-    showToast(res.ok ? `✓ 已加入行动「${name}」` : `✓ 行动「${name}」已创建`);
+    if (isNew) {
+      // 新行动：把本地数据推上去
+      pushSync();
+      showToast(`✓ 行动「${name}」已创建`);
+    } else {
+      showToast(`✓ 已加入「${name}」，数据已同步`);
+    }
   } catch(e) { errEl.textContent = '网络错误，请重试'; }
 }
 function uid() { return state.uid++; }
