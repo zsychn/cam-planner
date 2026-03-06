@@ -642,31 +642,46 @@ setTimeout(() => {
 
 function closeSyncModal() {}
 
+function getOpCode() {
+  const inputVal = (document.getElementById('sync-input')?.value || '').trim();
+  return inputVal || _syncCode;
+}
+
 async function syncUpload() {
-  if (!_syncCode) { showToast('请先输入行动代号'); return; }
+  const code = getOpCode();
+  if (!code) { showToast('请先输入行动代号'); return; }
+  if (!validUsername(code)) { showToast('代号格式不对，3–20位字母/数字/中文'); return; }
+  _syncCode = code;
+  localStorage.setItem('cam-sync-code', code);
+  setHeaderUser(code);
   try {
     const res = await fetch('/api/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: _syncCode, state }),
+      body: JSON.stringify({ code, state }),
     });
-    if (!res.ok) throw new Error();
+    if (!res.ok) throw new Error(res.status);
     showToast('✓ 已上传到云端');
-  } catch(e) { showToast('上传失败，请重试'); }
+  } catch(e) { showToast('上传失败：' + e.message); }
 }
 
 async function syncDownload() {
-  if (!_syncCode) { showToast('请先输入行动代号'); return; }
+  const code = getOpCode();
+  if (!code) { showToast('请先输入行动代号'); return; }
+  if (!validUsername(code)) { showToast('代号格式不对，3–20位字母/数字/中文'); return; }
+  _syncCode = code;
+  localStorage.setItem('cam-sync-code', code);
+  setHeaderUser(code);
   try {
-    const res = await fetch(`/api/sync?code=${encodeURIComponent(_syncCode)}`);
+    const res = await fetch(`/api/sync?code=${encodeURIComponent(code)}`);
     if (res.status === 404) { showToast('云端暂无数据，请先上传'); return; }
-    if (!res.ok) throw new Error();
+    if (!res.ok) throw new Error(res.status);
     const { state: remote } = await res.json();
     state = remote;
     localStorage.setItem('cam-planner-v1', JSON.stringify(state));
     renderRoutes(); renderTeam(); renderInlineSections();
-    showToast('✓ 已从云端加载最新数据');
-  } catch(e) { showToast('下载失败，请重试'); }
+    showToast('✓ 已加载最新数据');
+  } catch(e) { showToast('下载失败：' + e.message); }
 }
 
 
