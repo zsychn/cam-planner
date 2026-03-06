@@ -449,8 +449,19 @@ function routeSummary(sizes) {
 
 // ── Routes ─────────────────────────────────────────────────
 function addRoute() {
-  state.routes.push({id:uid(), name:`线路 ${state.routes.length+1}`, sizes:{}});
+  state.routes.push({id:uid(), name:`线路 ${state.routes.length+1}`, sizes:{}, collapsed:false});
   save(); renderRoutes();
+}
+
+function toggleRoute(id) {
+  const r = state.routes.find(r=>r.id===id);
+  if (!r) return;
+  r.collapsed = !r.collapsed;
+  save();
+  const grid = document.getElementById(`rgrid-${id}`);
+  const chevron = document.getElementById(`rchev-${id}`);
+  if (grid) grid.style.display = r.collapsed ? 'none' : '';
+  if (chevron) chevron.style.transform = r.collapsed ? 'rotate(-90deg)' : '';
 }
 function deleteRoute(id) {
   if (!confirm('删除这条线路？')) return;
@@ -467,17 +478,22 @@ function renderRoutes() {
   }
   el.innerHTML = state.routes.map(r => `
     <div class="card">
-      <div class="row-header">
+      <div class="row-header" style="margin-bottom:${r.collapsed?'0':'18px'}">
         <div style="display:flex;align-items:baseline;gap:12px;flex:1;min-width:0;overflow:hidden;">
           <input class="input-name" value="${esc(r.name)}" onchange="setRouteName(${r.id},this.value)" placeholder="线路名称"/>
           <span id="rsummary-${r.id}" style="font-size:14px;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:1;letter-spacing:-.2px;">${routeSummary(r.sizes)}</span>
         </div>
-        <button class="btn btn-danger" onclick="deleteRoute(${r.id})" style="flex-shrink:0;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
-          删除
-        </button>
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+          <button class="btn btn-ghost" onclick="toggleRoute(${r.id})" style="padding:5px 8px;" title="${r.collapsed?'展开':'折叠'}">
+            <svg id="rchev-${r.id}" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;transform:${r.collapsed?'rotate(-90deg)':''}"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <button class="btn btn-danger" onclick="deleteRoute(${r.id})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+            删除
+          </button>
+        </div>
       </div>
-      <div class="size-grid">${sizeGrid('route',r.id,r.sizes)}</div>
+      <div id="rgrid-${r.id}" class="size-grid" style="display:${r.collapsed?'none':''}">${sizeGrid('route',r.id,r.sizes)}</div>
     </div>`).join('');
 }
 
