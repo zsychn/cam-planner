@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0c0c0e">
 <title>塞子计划 · Cam Gear Planner</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <style>
 :root {
   --bg: #0c0c0e;
@@ -508,7 +508,6 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 
 </div>
 
-<div id="export-frame"></div>
 <div class="toast" id="toast"></div>
 
 
@@ -930,69 +929,27 @@ function renderPlan() {
 
 // ── Export ─────────────────────────────────────────────────
 async function exportImage() {
-  const {assignments,shortages,needed} = calcPlan();
-  const frame = document.getElementById('export-frame');
+  showToast('生成截图中…');
   const date = new Date().toLocaleDateString('zh-CN');
-  frame.innerHTML = `
-  <div style="background:#0c0c0e;color:#f0f0f2;padding:36px;width:720px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;">
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:28px;padding-bottom:22px;border-bottom:1px solid #26262d;">
-      <div style="width:40px;height:40px;background:linear-gradient(135deg,#6366f1,#a855f7);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">🪨</div>
-      <div>
-        <div style="font-size:18px;font-weight:700;letter-spacing:-.5px;">塞子计划</div>
-        <div style="font-size:11px;color:#555560;margin-top:2px;">${date} · Cam Gear Planner</div>
-      </div>
-    </div>
-
-    <div style="font-size:10px;color:#555560;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px;font-weight:600;">线路</div>
-    ${state.routes.map(r=>{
-      const items=SIZES.filter(s=>r.sizes[s.id]>0);
-      return `<div style="background:#141417;border:1px solid #26262d;border-radius:10px;padding:12px 16px;margin-bottom:8px;">
-        <div style="font-weight:600;font-size:13px;margin-bottom:8px;letter-spacing:-.2px;">${esc(r.name)}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;">
-          ${items.map(s=>`<span style="background:${s.color};border-radius:5px;padding:3px 10px;font-size:11px;font-weight:800;color:white;text-shadow:0 1px 3px rgba(0,0,0,.3);">${s.label} ×${r.sizes[s.id]}</span>`).join('')}
-        </div>
-      </div>`;
-    }).join('')}
-
-    <div style="font-size:10px;color:#555560;text-transform:uppercase;letter-spacing:1.2px;margin:22px 0 10px;font-weight:600;">总需清单</div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;">
-      ${SIZES.filter(s=>needed[s.id]).map(s=>`
-        <div style="background:#141417;border:1px solid ${s.color}35;border-radius:9px;padding:10px 14px;text-align:center;min-width:60px;">
-          <div style="color:${s.color};font-size:22px;font-weight:800;line-height:1;letter-spacing:-1px;">${needed[s.id]}</div>
-          <div style="font-size:10px;color:#555560;margin-top:3px;font-weight:500;">${s.label}</div>
-        </div>`).join('')}
-    </div>
-
-    ${shortages.length?`<div style="margin-top:12px;">${shortages.map(({s,need,have})=>`
-      <div style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:7px;padding:9px 14px;margin-bottom:6px;font-size:12px;color:#f87171;">
-        ⚠️ ${s.label} 不足 — 需要 ${need} 个，仅有 ${have} 个（缺 ${need-have} 个）
-      </div>`).join('')}</div>`:''}
-
-    <div style="font-size:10px;color:#555560;text-transform:uppercase;letter-spacing:1.2px;margin:22px 0 10px;font-weight:600;">分配计划</div>
-    ${state.team.map(m=>{
-      const brings=Object.entries(assignments[m.id]||{});
-      const total=brings.reduce((s,[,v])=>s+v,0);
-      return `<div style="background:#141417;border:1px solid #26262d;border-radius:10px;padding:13px 16px;margin-bottom:8px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <span style="font-weight:700;font-size:14px;letter-spacing:-.3px;">${esc(m.name)}</span>
-          <span style="font-size:11px;color:#555560;background:#1a1a1f;border:1px solid #26262d;border-radius:20px;padding:2px 9px;">携带 ${total} 个</span>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;">
-          ${brings.length
-            ?brings.map(([sid,cnt])=>{const sz=SIZES.find(s=>s.id===sid);return `<span style="background:${sz?.color};border-radius:5px;padding:3px 10px;font-size:11px;font-weight:800;color:white;text-shadow:0 1px 3px rgba(0,0,0,.3);">${sz?.label} ×${cnt}</span>`;}).join('')
-            :'<span style="color:#555560;font-size:11px;">无需携带</span>'}
-        </div>
-      </div>`;
-    }).join('')}
-  </div>`;
-  await new Promise(r=>setTimeout(r,300));
   try {
-    const canvas = await html2canvas(frame,{backgroundColor:'#0c0c0e',scale:2,useCORS:true,logging:false});
+    const canvas = await html2canvas(document.body, {
+      backgroundColor: '#0c0c0e',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      scrollX: 0,
+      scrollY: -window.scrollY,
+      windowWidth: document.documentElement.scrollWidth,
+      windowHeight: document.documentElement.scrollHeight,
+    });
     const link = document.createElement('a');
     link.download = `塞子计划_${date.replace(/\//g,'-')}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
-  } catch(e) { alert('导出失败，请手动截图。\n'+e.message); }
+    showToast('✓ 已保存');
+  } catch(e) {
+    showToast('截图失败，请手动截图');
+  }
 }
 
 // ── Toast ──────────────────────────────────────────────────
