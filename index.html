@@ -587,6 +587,7 @@ async function initSync() {
       if (remote?.routes) {
         state = remote;
         renderRoutes(); renderTeam(); renderInlineSections();
+        initUsername();
       }
     }
   } catch(e) {}
@@ -634,14 +635,16 @@ setTimeout(() => {
 function closeSyncModal() {}
 
 function saveUsername(name) {
-  if (!name) return;
-  localStorage.setItem('cam-username', name);
+  state.username = name;
+  save();
 }
 
 function initUsername() {
-  const stored = localStorage.getItem('cam-username');
   const input = document.getElementById('username-input');
-  if (stored && input) input.value = stored;
+  if (!input) return;
+  const name = state.username || localStorage.getItem('cam-username') || '';
+  input.value = name;
+  if (name) state.username = name;
 }
 
 async function confirmUsername() {
@@ -669,6 +672,7 @@ async function confirmUsername() {
     setHeaderUser(name);
     closeSyncModal();
     renderRoutes(); renderTeam(); renderInlineSections();
+    initUsername();
     errEl.textContent = '';
     if (isNew) {
       // 新行动：把本地数据推上去
