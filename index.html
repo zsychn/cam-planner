@@ -453,28 +453,25 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 <div class="header">
   <div class="logo">🪨</div>
   <span class="header-title">塞子计划</span>
-</div>
-
-<!-- 顶部栏：用户名 + 行动代号 -->
-<div id="op-bar" style="background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;">
-  <div style="display:flex;align-items:center;gap:7px;padding:10px 14px;border-right:1px solid var(--border);flex:1;min-width:0;">
+  <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    <span style="font-size:11px;color:var(--text-3);flex-shrink:0;">用户名</span>
-    <input id="username-input" placeholder="你的名字" maxlength="20"
-      style="flex:1;background:transparent;border:none;color:var(--text);font-size:13px;font-weight:600;outline:none;min-width:0;"
+    <input id="username-input" placeholder="用户名" maxlength="20"
+      style="background:transparent;border:none;color:var(--text-2);font-size:13px;font-weight:600;outline:none;width:90px;text-align:right;"
       onchange="saveUsername(this.value.trim())"/>
   </div>
-  <div style="display:flex;align-items:center;gap:7px;padding:10px 14px;flex:1.5;min-width:0;">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-    <span style="font-size:11px;color:var(--text-3);flex-shrink:0;">行动代号</span>
-    <input id="sync-input" placeholder="输入代号加入队伍…" maxlength="30"
-      style="flex:1;background:transparent;border:none;color:var(--accent);font-size:13px;font-weight:700;outline:none;min-width:0;"
-      onkeydown="if(event.key==='Enter')confirmUsername()"
-      onfocus="document.getElementById('op-bar').style.borderBottomColor='var(--accent)'"
-      onblur="document.getElementById('op-bar').style.borderBottomColor='var(--border)'"/>
-    <button id="sync-confirm-btn" class="btn btn-primary" onclick="confirmUsername()" style="flex-shrink:0;display:none;padding:4px 10px;font-size:12px;">加入</button>
-    <div id="sync-error" style="font-size:11px;color:#f87171;flex-shrink:0;"></div>
-  </div>
+</div>
+
+<!-- 行动代号栏 -->
+<div id="op-bar" style="background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:10px 20px;">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+  <span style="font-size:11px;color:var(--text-3);flex-shrink:0;">行动代号</span>
+  <input id="sync-input" placeholder="输入代号加入队伍，队友用同一代号共享装备计划…" maxlength="30"
+    style="flex:1;background:transparent;border:none;color:var(--accent);font-size:13px;font-weight:700;outline:none;min-width:0;"
+    onkeydown="if(event.key==='Enter')confirmUsername()"
+    onfocus="document.getElementById('op-bar').style.borderBottomColor='var(--accent)'"
+    onblur="document.getElementById('op-bar').style.borderBottomColor='var(--border)'"/>
+  <button id="sync-confirm-btn" class="btn btn-primary" onclick="confirmUsername()" style="flex-shrink:0;display:none;padding:4px 10px;font-size:12px;">加入</button>
+  <div id="sync-error" style="font-size:11px;color:#f87171;flex-shrink:0;"></div>
 </div>
 
 <div class="tabs">
