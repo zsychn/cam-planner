@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>塞子计划 · Gear Planner</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root {
+  --bg:#0d1117; --s1:#161b22; --s2:#1c2128; --border:#30363d;
+  --text:#e6edf3; --muted:#8b949e; --accent:#f78166; --red:#f85149; --blue:#58a6ff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.header{background:var(--s1);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;}
+.header h1{font-size:18px;font-weight:700;letter-spacing:-.3px;}
+.header small{color:var(--muted);font-size:12px;margin-left:6px;font-weight:400;}
+.tabs{display:flex;background:var(--s1);border-bottom:1px solid var(--border);padding:0 20px;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{padding:11px 18px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s;user-select:none;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.content{max-width:860px;margin:0 auto;padding:20px 16px 60px;}
+.section{display:none;}
+.section.active{display:block;}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px;}
+.input-name{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:14px;font-weight:600;width:200px;outline:none;transition:border-color .15s;}
+.input-name:focus{border-color:var(--blue);}
+.row-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.size-grid{display:flex;flex-wrap:wrap;gap:8px 6px;}
+.size-item{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.size-badge{border-radius:4px;padding:2px 5px;font-size:10px;font-weight:800;color:white;letter-spacing:.2px;text-shadow:0 1px 2px rgba(0,0,0,.35);min-width:28px;text-align:center;}
+.size-ctrl{display:flex;align-items:center;gap:2px;}
+.sz-btn{width:22px;height:22px;background:var(--s2);border:1px solid var(--border);border-radius:4px;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;transition:all .1s;flex-shrink:0;}
+.sz-btn:hover{background:var(--border);color:var(--text);}
+.sz-val{width:26px;text-align:center;font-size:13px;font-weight:700;}
+.btn{padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+.btn-primary{background:var(--accent);color:white;}
+.btn-primary:hover{opacity:.88;}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn-ghost:hover{color:var(--text);background:var(--s2);}
+.btn-red{background:transparent;border:1px solid #f8514938;color:var(--red);}
+.btn-red:hover{background:#f8514912;}
+.btn-export{background:var(--blue);color:white;padding:9px 18px;font-size:14px;border-radius:8px;}
+.btn-export:hover{opacity:.88;}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
+.empty{text-align:center;padding:48px 24px;color:var(--muted);font-size:14px;}
+.empty-icon{font-size:36px;margin-bottom:10px;}
+.summary-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.summary-chip{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;min-width:62px;}
+.chip-count{font-size:22px;font-weight:800;line-height:1.1;}
+.chip-label{font-size:11px;color:var(--muted);margin-top:2px;}
+.plan-member{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px;}
+.plan-member-header{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;}
+.plan-member-name{font-size:15px;font-weight:700;}
+.plan-member-total{font-size:12px;color:var(--muted);}
+.gear-tags{display:flex;flex-wrap:wrap;gap:5px;}
+.gear-tag{padding:3px 10px;border-radius:5px;font-size:12px;font-weight:700;color:white;text-shadow:0 1px 2px rgba(0,0,0,.3);}
+.alert-box{background:#f8514912;border:1px solid #f8514940;border-radius:6px;padding:10px 14px;margin-bottom:8px;font-size:13px;color:var(--red);}
+.sec-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:600;}
+hr.divider{border:none;border-top:1px solid var(--border);margin:18px 0;}
+#export-frame{position:fixed;top:-9999px;left:0;background:#161b22;padding:28px;width:700px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e6edf3;z-index:-1;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span style="font-size:22px">🪨</span>
+  <h1>塞子计划<small>BD C4 / Z4 Gear Planner</small></h1>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="routes">📍 线路</div>
+  <div class="tab" data-tab="summary">📦 总清单</div>
+  <div class="tab" data-tab="team">👥 队员</div>
+  <div class="tab" data-tab="plan">📋 分配计划</div>
+</div>
+
+<div class="content">
+  <div class="section active" id="s-routes">
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="addRoute()">＋ 添加线路</button>
+    </div>
+    <div id="routes-list"></div>
+  </div>
+
+  <div class="section" id="s-summary">
+    <div id="summary-content"></div>
+  </div>
+
+  <div class="section" id="s-team">
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="addMember()">＋ 添加队员</button>
+    </div>
+    <div id="team-list"></div>
+  </div>
+
+  <div class="section" id="s-plan">
+    <div class="toolbar">
+      <button class="btn btn-ghost" onclick="renderPlan()">🔄 重新计算</button>
+      <button class="btn btn-export" onclick="exportImage()">📷 保存为图片</button>
+    </div>
+    <div id="plan-content"></div>
+  </div>
+</div>
+
+<div id="export-frame"></div>
+
+<script>
+// ============================================================
+// SIZES — BD C4 (#0.1–#6), Z4 available for #0.1–#1
+// ============================================================
+const SIZES = [
+  {id:'0.1',  label:'#0.1',  abbr:'.1',  color:'#FF6B6B', z4:true},
+  {id:'0.2',  label:'#0.2',  abbr:'.2',  color:'#FF9F43', z4:true},
+  {id:'0.3',  label:'#0.3',  abbr:'.3',  color:'#FFC312', z4:true},
+  {id:'0.4',  label:'#0.4',  abbr:'.4',  color:'#6AB04C', z4:true},
+  {id:'0.5',  label:'#0.5',  abbr:'.5',  color:'#1DD1A1', z4:true},
+  {id:'0.6',  label:'#0.6',  abbr:'.6',  color:'#54A0FF', z4:true},
+  {id:'0.75', label:'#0.75', abbr:'.75', color:'#9B59B6', z4:true},
+  {id:'1',    label:'#1',    abbr:'1',   color:'#C0392B', z4:true},
+  {id:'2',    label:'#2',    abbr:'2',   color:'#D35400', z4:false},
+  {id:'3',    label:'#3',    abbr:'3',   color:'#7D3C98', z4:false},
+  {id:'4',    label:'#4',    abbr:'4',   color:'#1A5276', z4:false},
+  {id:'5',    label:'#5',    abbr:'5',   color:'#117A65', z4:false},
+  {id:'6',    label:'#6',    abbr:'6',   color:'#616A6B', z4:false},
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {routes:[], team:[], uid:1};
+
+function save() {
+  try { localStorage.setItem('cam-planner-v1', JSON.stringify(state)); } catch(e) {}
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem('cam-planner-v1'));
+    if (d && d.routes) state = d;
+  } catch(e) {}
+}
+function uid() { return state.uid++; }
+
+// ============================================================
+// TABS
+// ============================================================
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const tab = t.dataset.tab;
+    document.getElementById('s-'+tab).classList.add('active');
+    if (tab === 'summary') renderSummary();
+    if (tab === 'plan') renderPlan();
+  });
+});
+
+// ============================================================
+// SHARED SIZE GRID
+// ============================================================
+function sizeGrid(type, id, sizes) {
+  return SIZES.map(s => {
+    const v = sizes[s.id] || 0;
+    return `<div class="size-item">
+      <div class="size-badge" style="background:${s.color}">${s.abbr}</div>
+      <div class="size-ctrl">
+        <button class="sz-btn" onclick="chg('${type}',${id},'${s.id}',-1)">−</button>
+        <span class="sz-val" id="${type}-${id}-${s.id}" style="color:${v>0?'#e6edf3':'#555e6a'}">${v}</span>
+        <button class="sz-btn" onclick="chg('${type}',${id},'${s.id}',1)">＋</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function chg(type, id, sid, delta) {
+  const arr = type==='route' ? state.routes : state.team;
+  const obj = arr.find(o => o.id === id);
+  if (!obj) return;
+  obj.sizes[sid] = Math.max(0, (obj.sizes[sid]||0) + delta);
+  const el = document.getElementById(`${type}-${id}-${sid}`);
+  if (el) {
+    el.textContent = obj.sizes[sid] || 0;
+    el.style.color = obj.sizes[sid] > 0 ? '#e6edf3' : '#555e6a';
+  }
+  save();
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============================================================
+// ROUTES
+// ============================================================
+function addRoute() {
+  state.routes.push({id:uid(), name:`线路 ${state.routes.length+1}`, sizes:{}});
+  save(); renderRoutes();
+}
+function deleteRoute(id) {
+  if (!confirm('删除这条线路？')) return;
+  state.routes = state.routes.filter(r => r.id !== id);
+  save(); renderRoutes();
+}
+function setRouteName(id, name) {
+  const r = state.routes.find(r => r.id===id);
+  if (r) { r.name = name; save(); }
+}
+function renderRoutes() {
+  const el = document.getElementById('routes-list');
+  if (!state.routes.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🧗</div>还没有线路，点击上方添加</div>`;
+    return;
+  }
+  el.innerHTML = state.routes.map(r => `
+    <div class="card">
+      <div class="row-header">
+        <input class="input-name" value="${esc(r.name)}"
+          onchange="setRouteName(${r.id},this.value)" placeholder="线路名称"/>
+        <button class="btn btn-red" onclick="deleteRoute(${r.id})">删除</button>
+      </div>
+      <div class="size-grid">${sizeGrid('route', r.id, r.sizes)}</div>
+    </div>`).join('');
+}
+
+// ============================================================
+// SUMMARY
+// ============================================================
+function calcNeeded() {
+  const t = {};
+  state.routes.forEach(r => {
+    SIZES.forEach(s => { if (r.sizes[s.id]) t[s.id] = (t[s.id]||0) + r.sizes[s.id]; });
+  });
+  return t;
+}
+
+function renderSummary() {
+  const el = document.getElementById('summary-content');
+  const needed = calcNeeded();
+  const active = SIZES.filter(s => needed[s.id]);
+  if (!active.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📦</div>先添加线路再查看清单</div>`;
+    return;
+  }
+  const total = active.reduce((s,c) => s+needed[c.id], 0);
+  el.innerHTML = `
+    <div class="sec-title">需要携带的总量</div>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px">
+      共需 <strong style="color:var(--accent);font-size:16px">${total}</strong> 个塞子，${active.length} 种规格
+    </p>
+    <div class="summary-chips">
+      ${active.map(s => `
+        <div class="summary-chip" style="border-color:${s.color}55">
+          <div class="chip-count" style="color:${s.color}">${needed[s.id]}</div>
+          <div class="chip-label">${s.label}</div>
+        </div>`).join('')}
+    </div>
+    <hr class="divider">
+    <div class="sec-title">线路明细</div>
+    ${state.routes.map(r => {
+      const items = SIZES.filter(s => r.sizes[s.id]>0);
+      return `<div class="card">
+        <div style="font-weight:600;font-size:14px;margin-bottom:8px">${esc(r.name)}</div>
+        <div class="gear-tags">
+          ${items.length
+            ? items.map(s => `<span class="gear-tag" style="background:${s.color}">${s.label} ×${r.sizes[s.id]}</span>`).join('')
+            : '<span style="color:var(--muted);font-size:12px">未设置需求</span>'}
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+// ============================================================
+// TEAM
+// ============================================================
+function addMember() {
+  state.team.push({id:uid(), name:`队员 ${state.team.length+1}`, sizes:{}});
+  save(); renderTeam();
+}
+function deleteMember(id) {
+  if (!confirm('删除这位队员？')) return;
+  state.team = state.team.filter(m => m.id!==id);
+  save(); renderTeam();
+}
+function setMemberName(id, name) {
+  const m = state.team.find(m => m.id===id);
+  if (m) { m.name = name; save(); }
+}
+function renderTeam() {
+  const el = document.getElementById('team-list');
+  if (!state.team.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">👥</div>还没有队员，点击上方添加</div>`;
+    return;
+  }
+  el.innerHTML = state.team.map(m => `
+    <div class="card">
+      <div class="row-header">
+        <input class="input-name" value="${esc(m.name)}"
+          onchange="setMemberName(${m.id},this.value)" placeholder="队员名称"/>
+        <button class="btn btn-red" onclick="deleteMember(${m.id})">删除</button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:10px">填写该队员拥有的塞子数量</p>
+      <div class="size-grid">${sizeGrid('team', m.id, m.sizes)}</div>
+    </div>`).join('');
+}
+
+// ============================================================
+// DISTRIBUTION ALGORITHM
+// ============================================================
+function distribute(needed, owners) {
+  // owners: [{id, has}]
+  const totalAvail = owners.reduce((s,o) => s+o.has, 0);
+  if (!totalAvail) return {};
+  const actual = Math.min(needed, totalAvail);
+
+  // Largest remainder method
+  const alloc = owners.map(o => {
+    const exact = actual * o.has / totalAvail;
+    return {id:o.id, floor:Math.floor(exact), frac:exact%1, has:o.has};
+  });
+  let rem = actual - alloc.reduce((s,a) => s+a.floor, 0);
+  alloc.sort((a,b) => b.frac-a.frac);
+  alloc.forEach(a => { if (rem>0 && a.floor<a.has) { a.floor++; rem--; } });
+
+  const res = {};
+  alloc.forEach(a => { if (a.floor>0) res[a.id] = a.floor; });
+  return res;
+}
+
+function calcPlan() {
+  const needed = calcNeeded();
+  const assignments = {};
+  state.team.forEach(m => assignments[m.id] = {});
+  const shortages = [];
+
+  SIZES.forEach(s => {
+    const need = needed[s.id] || 0;
+    if (!need) return;
+    const owners = state.team
+      .filter(m => (m.sizes[s.id]||0) > 0)
+      .map(m => ({id:m.id, has:m.sizes[s.id]}));
+    const totalAvail = owners.reduce((sum,o) => sum+o.has, 0);
+    if (totalAvail < need) {
+      shortages.push({s, need, have:totalAvail});
+    }
+    const dist = distribute(need, owners);
+    Object.entries(dist).forEach(([mid,cnt]) => {
+      assignments[mid][s.id] = cnt;
+    });
+  });
+
+  return {assignments, shortages, needed};
+}
+
+// ============================================================
+// RENDER PLAN
+// ============================================================
+function renderPlan() {
+  const el = document.getElementById('plan-content');
+  if (!state.routes.length || !state.team.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div>需要先填写线路和队员信息</div>`;
+    return;
+  }
+  const {assignments, shortages} = calcPlan();
+  let html = '';
+
+  shortages.forEach(({s,need,have}) => {
+    html += `<div class="alert-box">⚠️ <strong>${s.label}</strong> 不足：需要 ${need} 个，队伍共有 ${have} 个（缺 ${need-have} 个）</div>`;
+  });
+
+  html += state.team.map(m => {
+    const brings = Object.entries(assignments[m.id]||{});
+    const total = brings.reduce((s,[,v]) => s+v, 0);
+    return `<div class="plan-member">
+      <div class="plan-member-header">
+        <span class="plan-member-name">${esc(m.name)}</span>
+        <span class="plan-member-total">携带 ${total} 个</span>
+      </div>
+      <div class="gear-tags">
+        ${brings.length
+          ? brings.map(([sid,cnt]) => {
+              const sz = SIZES.find(s => s.id===sid);
+              return `<span class="gear-tag" style="background:${sz?.color}">${sz?.label} ×${cnt}</span>`;
+            }).join('')
+          : '<span style="color:var(--muted);font-size:12px">无需携带</span>'}
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = html;
+}
+
+// ============================================================
+// EXPORT TO IMAGE
+// ============================================================
+async function exportImage() {
+  const {assignments, shortages, needed} = calcPlan();
+  const frame = document.getElementById('export-frame');
+  const date = new Date().toLocaleDateString('zh-CN');
+
+  frame.innerHTML = `
+  <div style="background:#161b22;color:#e6edf3;padding:32px;width:700px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid #30363d;">
+      <div style="width:44px;height:44px;background:#f78166;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;">🪨</div>
+      <div>
+        <div style="font-size:20px;font-weight:700;letter-spacing:-.3px;">塞子计划</div>
+        <div style="font-size:12px;color:#8b949e;margin-top:2px;">${date} · BD C4 / Z4 Gear Planner</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:600;">线路</div>
+    ${state.routes.map(r => {
+      const items = SIZES.filter(s => r.sizes[s.id]>0);
+      return `<div style="background:#1c2128;border:1px solid #30363d;border-radius:6px;padding:11px 14px;margin-bottom:8px;">
+        <div style="font-weight:600;font-size:13px;margin-bottom:7px;">${esc(r.name)}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+          ${items.map(s => `<span style="background:${s.color};border-radius:4px;padding:2px 9px;font-size:11px;font-weight:800;color:white;text-shadow:0 1px 2px rgba(0,0,0,.3);">${s.label} ×${r.sizes[s.id]}</span>`).join('')}
+        </div>
+      </div>`;
+    }).join('')}
+
+    <div style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;font-weight:600;">总需清单</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+      ${SIZES.filter(s => needed[s.id]).map(s => `
+        <div style="background:#1c2128;border:1px solid ${s.color}50;border-radius:7px;padding:9px 13px;text-align:center;min-width:58px;">
+          <div style="color:${s.color};font-size:22px;font-weight:800;line-height:1.1;">${needed[s.id]}</div>
+          <div style="font-size:10px;color:#8b949e;margin-top:2px;">${s.label}</div>
+        </div>`).join('')}
+    </div>
+
+    ${shortages.length ? `<div style="margin-top:12px;">
+      ${shortages.map(({s,need,have}) => `
+        <div style="background:#f8514912;border:1px solid #f8514940;border-radius:5px;padding:8px 12px;margin-bottom:6px;font-size:12px;color:#f85149;">
+          ⚠️ ${s.label} 不足：需要 ${need} 个，仅有 ${have} 个（缺 ${need-have} 个）
+        </div>`).join('')}
+    </div>` : ''}
+
+    <div style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;font-weight:600;">分配计划</div>
+    ${state.team.map(m => {
+      const brings = Object.entries(assignments[m.id]||{});
+      const total = brings.reduce((s,[,v]) => s+v, 0);
+      return `<div style="background:#1c2128;border:1px solid #30363d;border-radius:6px;padding:11px 14px;margin-bottom:8px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:8px;">
+          ${esc(m.name)} <span style="color:#8b949e;font-size:11px;font-weight:400;">携带 ${total} 个</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+          ${brings.length
+            ? brings.map(([sid,cnt]) => {
+                const sz = SIZES.find(s => s.id===sid);
+                return `<span style="background:${sz?.color};border-radius:4px;padding:2px 9px;font-size:11px;font-weight:800;color:white;text-shadow:0 1px 2px rgba(0,0,0,.3);">${sz?.label} ×${cnt}</span>`;
+              }).join('')
+            : '<span style="color:#8b949e;font-size:11px;">无需携带</span>'}
+        </div>
+      </div>`;
+    }).join('')}
+
+  </div>`;
+
+  await new Promise(r => setTimeout(r, 300));
+
+  try {
+    const canvas = await html2canvas(frame, {
+      backgroundColor: '#161b22',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    });
+    const link = document.createElement('a');
+    link.download = `塞子计划_${date.replace(/\//g,'-')}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e) {
+    alert('导出失败，请手动截图。\n' + e.message);
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+load();
+renderRoutes();
+renderTeam();
+</script>
+</body>
+</html>
