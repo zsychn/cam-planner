@@ -466,15 +466,25 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 <div class="content">
 
   <div class="section active" id="s-community">
-    <div class="toolbar" style="margin-bottom:16px;">
-      <div style="display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px;gap:2px;">
-        <button id="ctab-route" class="btn" style="padding:5px 14px;font-size:12px;background:var(--accent);color:white;border-radius:6px;" onclick="switchCommunityTab('route')">线路</button>
-        <button id="ctab-member" class="btn" style="padding:5px 14px;font-size:12px;background:transparent;color:var(--text-3);border-radius:6px;" onclick="switchCommunityTab('member')">队员</button>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px;gap:2px;flex-shrink:0;">
+          <button id="ctab-route" class="btn" style="padding:5px 14px;font-size:12px;background:var(--accent);color:white;border-radius:6px;" onclick="switchCommunityTab('route')">线路</button>
+          <button id="ctab-member" class="btn" style="padding:5px 14px;font-size:12px;background:transparent;color:var(--text-3);border-radius:6px;" onclick="switchCommunityTab('member')">队员</button>
+        </div>
+        <button class="btn btn-ghost" onclick="loadCommunity()" style="margin-left:auto;flex-shrink:0;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          刷新
+        </button>
       </div>
-      <button class="btn btn-ghost" onclick="loadCommunity()" style="margin-left:auto;">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-        刷新
-      </button>
+      <div style="position:relative;">
+        <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-3);" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="community-search" type="search" placeholder="搜索名称…"
+          style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px 9px 34px;color:var(--text);font-size:14px;outline:none;transition:border-color 0.15s;"
+          oninput="filterCommunity(this.value)"
+          onfocus="this.style.borderColor='var(--accent)'"
+          onblur="this.style.borderColor='var(--border)'"/>
+      </div>
     </div>
     <div id="community-list"></div>
   </div>
@@ -1005,6 +1015,7 @@ function timeAgo(ts) {
 }
 
 let _communityTab = 'route';
+let _communityDocs = [];
 
 function switchCommunityTab(type) {
   _communityTab = type;
@@ -1012,6 +1023,8 @@ function switchCommunityTab(type) {
   document.getElementById('ctab-route').style.color = type==='route' ? 'white' : 'var(--text-3)';
   document.getElementById('ctab-member').style.background = type==='member' ? 'var(--accent)' : 'transparent';
   document.getElementById('ctab-member').style.color = type==='member' ? 'white' : 'var(--text-3)';
+  const s = document.getElementById('community-search');
+  if (s) s.value = '';
   loadCommunity();
 }
 
@@ -1022,12 +1035,28 @@ async function loadCommunity() {
   try {
     const res = await fetch(`/api/community?type=${type}`);
     if (!res.ok) throw new Error();
-    const docs = await res.json();
+    _communityDocs = await res.json();
+    renderCommunityDocs(_communityDocs);
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">加载失败</div><div class="empty-sub">请检查网络连接</div></div>`;
+  }
+}
+
+function filterCommunity(q) {
+  const filtered = q.trim()
+    ? _communityDocs.filter(d => d.name.toLowerCase().includes(q.toLowerCase()))
+    : _communityDocs;
+  renderCommunityDocs(filtered, q.trim());
+}
+
+function renderCommunityDocs(docs, q='') {
+  const el = document.getElementById('community-list');
+  const type = _communityTab;
 
     if (!docs.length) {
-      const icon = type==='route' ? '🌐' : '👥';
-      const txt  = type==='route' ? '社区还没有线路' : '社区还没有队员';
-      const sub  = type==='route' ? '在「线路」标签配好装备后，点「分享」发布' : '在「队员」标签填好装备后，点「分享」发布';
+      const icon = q ? '🔍' : (type==='route' ? '🌐' : '👥');
+      const txt  = q ? `没有匹配「${q}」的结果` : (type==='route' ? '社区还没有线路' : '社区还没有队员');
+      const sub  = q ? '换个关键词试试' : (type==='route' ? '在「线路」标签配好装备后，点「分享」发布' : '在「队员」标签填好装备后，点「分享」发布');
       el.innerHTML = `<div class="empty"><div class="empty-icon">${icon}</div><div class="empty-text">${txt}</div><div class="empty-sub">${sub}</div></div>`;
       return;
     }
@@ -1053,9 +1082,6 @@ async function loadCommunity() {
         </div>
       </div>`;
     }).join('');
-  } catch(e) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">加载失败</div><div class="empty-sub">请检查网络连接</div></div>`;
-  }
 }
 
 function addFromCommunity(route) {
