@@ -463,23 +463,25 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
   </div>
 </div>
 
-<!-- 同步码弹窗 -->
-<div id="sync-mask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;backdrop-filter:blur(4px);" onclick="closeSyncModal()"></div>
+<!-- 用户名弹窗 -->
+<div id="sync-mask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;backdrop-filter:blur(4px);"></div>
 <div id="sync-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:201;width:min(380px,90vw);background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:0 24px 64px rgba(0,0,0,0.6);">
-  <div style="font-size:16px;font-weight:700;letter-spacing:-.3px;margin-bottom:4px;">🔑 同步码</div>
-  <div style="font-size:12px;color:var(--text-3);margin-bottom:20px;line-height:1.6;">换设备时输入同样的码，数据自动恢复。请自行保存。</div>
-  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
-    <span id="sync-code-display" style="font-size:18px;font-weight:800;letter-spacing:2px;font-family:monospace;color:var(--accent);"></span>
-    <button onclick="copyCode()" style="background:transparent;border:none;color:var(--text-3);cursor:pointer;padding:4px;border-radius:5px;" title="复制">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-    </button>
+  <div style="font-size:16px;font-weight:700;letter-spacing:-.3px;margin-bottom:4px;">👤 <span id="sync-modal-title">设置用户名</span></div>
+  <div style="font-size:12px;color:var(--text-3);margin-bottom:20px;line-height:1.6;">用户名是你的唯一标识，换设备输入同样的名字即可恢复数据。</div>
+  <div id="sync-current-wrap" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:16px;">
+    <div style="font-size:11px;color:var(--text-3);margin-bottom:3px;">当前用户名</div>
+    <div id="sync-code-display" style="font-size:17px;font-weight:800;color:var(--accent);"></div>
   </div>
-  <div style="font-size:12px;color:var(--text-3);margin-bottom:8px;">切换到其他账号：</div>
-  <div style="display:flex;gap:8px;">
-    <input id="sync-input" placeholder="输入已有同步码" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')switchCode()"/>
-    <button class="btn btn-primary" onclick="switchCode()">切换</button>
+  <div style="font-size:12px;color:var(--text-3);margin-bottom:6px;">输入用户名（3–20位，字母/数字/中文/连字符）</div>
+  <div style="display:flex;gap:8px;margin-bottom:6px;">
+    <input id="sync-input" placeholder="如：reed-climbs" maxlength="20"
+      style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:15px;outline:none;"
+      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+      onkeydown="if(event.key==='Enter')confirmUsername()"/>
+    <button class="btn btn-primary" onclick="confirmUsername()">确认</button>
   </div>
-  <button onclick="closeSyncModal()" class="btn btn-ghost" style="width:100%;margin-top:12px;justify-content:center;">关闭</button>
+  <div id="sync-error" style="font-size:12px;color:#f87171;min-height:16px;margin-bottom:8px;"></div>
+  <button onclick="closeSyncModal()" class="btn btn-ghost" id="sync-close-btn" style="width:100%;justify-content:center;display:none;">取消</button>
 </div>
 
 <div class="tabs">
@@ -570,34 +572,24 @@ const SIZES = [
 // ── State ──────────────────────────────────────────────────
 let state = {routes:[], team:[], uid:1};
 
-// ── Sync ───────────────────────────────────────────────────
-const ADJECTIVES = ['blue','peak','rock','iron','swift','bold','free','wild','dawn','sky'];
-const NOUNS      = ['crag','wall','ledge','crack','ridge','pinch','crimp','slab','arete','dihedral'];
-
-function genCode() {
-  const a = ADJECTIVES[Math.floor(Math.random()*ADJECTIVES.length)];
-  const b = NOUNS[Math.floor(Math.random()*NOUNS.length)];
-  const n = Math.floor(Math.random()*900)+100;
-  return `${a}-${b}-${n}`;
-}
-
-let _syncCode = null;
+// ── Sync / Account ─────────────────────────────────────────
+let _syncCode = null; // 实际存的是用户名
 let _syncTimer = null;
 
-function getSyncCode() {
-  let c = localStorage.getItem('cam-sync-code');
-  if (!c) { c = genCode(); localStorage.setItem('cam-sync-code', c); }
-  return c;
+function validUsername(s) {
+  return s && s.length >= 3 && s.length <= 20 && /^[\w\u4e00-\u9fa5-]+$/.test(s);
 }
 
 async function initSync() {
-  _syncCode = getSyncCode();
-  const label = document.getElementById('sync-code-label');
-  if (label) label.textContent = _syncCode;
-  const display = document.getElementById('sync-code-display');
-  if (display) display.textContent = _syncCode;
-
-  // 尝试从云端拉取
+  const stored = localStorage.getItem('cam-sync-code');
+  if (!stored) {
+    // 首次使用，强制设置用户名
+    showSyncModal(true);
+    return;
+  }
+  _syncCode = stored;
+  setHeaderUser(_syncCode);
+  // 从云端拉取
   try {
     const res = await fetch(`/api/sync?code=${encodeURIComponent(_syncCode)}`);
     if (res.ok) {
@@ -605,15 +597,18 @@ async function initSync() {
       if (remote?.routes) {
         state = remote;
         renderRoutes(); renderTeam(); renderInlineSections();
-        if (label) label.textContent = _syncCode;
       }
     }
   } catch(e) {}
 }
 
+function setHeaderUser(name) {
+  const label = document.getElementById('sync-code-label');
+  if (label) label.textContent = name;
+}
+
 function save() {
   try { localStorage.setItem('cam-planner-v1', JSON.stringify(state)); } catch(e) {}
-  // 防抖推送到云端
   clearTimeout(_syncTimer);
   _syncTimer = setTimeout(pushSync, 1200);
 }
@@ -631,39 +626,63 @@ async function pushSync() {
 
 function load() { try { const d = JSON.parse(localStorage.getItem('cam-planner-v1')); if (d?.routes) state = d; } catch(e) {} }
 
-function openSyncModal() {
-  document.getElementById('sync-code-display').textContent = _syncCode;
+function openSyncModal() { showSyncModal(false); }
+
+function showSyncModal(isFirst) {
+  document.getElementById('sync-modal-title').textContent = isFirst ? '设置用户名' : '切换账号';
+  const wrap = document.getElementById('sync-current-wrap');
+  const closeBtn = document.getElementById('sync-close-btn');
+  const display = document.getElementById('sync-code-display');
+  if (isFirst) {
+    wrap.style.display = 'none';
+    closeBtn.style.display = 'none';
+    document.getElementById('sync-mask').onclick = null; // 首次不能关
+  } else {
+    wrap.style.display = 'block';
+    if (display) display.textContent = _syncCode || '';
+    closeBtn.style.display = '';
+    document.getElementById('sync-mask').onclick = closeSyncModal;
+  }
   document.getElementById('sync-input').value = '';
+  document.getElementById('sync-error').textContent = '';
   document.getElementById('sync-mask').style.display = '';
   document.getElementById('sync-modal').style.display = '';
+  setTimeout(()=>document.getElementById('sync-input').focus(), 100);
 }
+
 function closeSyncModal() {
+  if (!_syncCode) return; // 首次未设置不允许关
   document.getElementById('sync-mask').style.display = 'none';
   document.getElementById('sync-modal').style.display = 'none';
 }
-function copyCode() {
-  navigator.clipboard?.writeText(_syncCode).then(()=>showToast('✓ 已复制同步码'));
-}
-async function switchCode() {
+
+async function confirmUsername() {
   const input = document.getElementById('sync-input');
-  const newCode = input.value.trim();
-  if (!newCode || newCode.length < 6) { showToast('请输入有效的同步码'); return; }
+  const errEl = document.getElementById('sync-error');
+  const name = input.value.trim();
+  if (!validUsername(name)) {
+    errEl.textContent = '用户名 3–20 位，只能用字母/数字/中文/连字符';
+    return;
+  }
+  errEl.textContent = '验证中…';
   try {
-    const res = await fetch(`/api/sync?code=${encodeURIComponent(newCode)}`);
-    if (res.status === 404) { showToast('找不到该同步码，请确认'); return; }
-    if (!res.ok) throw new Error();
-    const { state: remote } = await res.json();
-    if (!remote?.routes) { showToast('数据异常，请重试'); return; }
-    state = remote;
-    _syncCode = newCode;
-    localStorage.setItem('cam-sync-code', newCode);
+    const res = await fetch(`/api/sync?code=${encodeURIComponent(name)}`);
+    if (res.ok) {
+      // 已有账号 → 登录并拉取数据
+      const { state: remote } = await res.json();
+      if (remote?.routes) state = remote;
+    }
+    // 404 → 新账号，直接用本地数据
+    _syncCode = name;
+    localStorage.setItem('cam-sync-code', name);
     localStorage.setItem('cam-planner-v1', JSON.stringify(state));
-    document.getElementById('sync-code-label').textContent = _syncCode;
-    document.getElementById('sync-code-display').textContent = _syncCode;
+    setHeaderUser(name);
     closeSyncModal();
     renderRoutes(); renderTeam(); renderInlineSections();
-    showToast('✓ 已切换账号，数据已恢复');
-  } catch(e) { showToast('切换失败，请重试'); }
+    pushSync();
+    errEl.textContent = '';
+    showToast(res.ok ? `✓ 已登录「${name}」` : `✓ 账号「${name}」创建成功`);
+  } catch(e) { errEl.textContent = '网络错误，请重试'; }
 }
 function uid() { return state.uid++; }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
