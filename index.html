@@ -427,6 +427,24 @@ function chg(type, id, sid, delta) {
   const el = document.getElementById(`${type}-${id}-${sid}`);
   if (el) { el.textContent = obj.sizes[sid]||0; el.className = 'sz-val'+(obj.sizes[sid]>0?' on':''); }
   save();
+  if (type==='route') {
+    const se = document.getElementById(`rsummary-${id}`);
+    if (se) se.textContent = routeSummary(obj.sizes);
+  }
+}
+
+function routeSummary(sizes) {
+  const used = SIZES.filter(s => (sizes[s.id]||0) > 0);
+  if (!used.length) return '';
+  const doubles = used.filter(s => (sizes[s.id]||0) >= 2);
+  let text = used.length === 1
+    ? used[0].label
+    : `${used[0].label} – ${used[used.length-1].label}`;
+  if (doubles.length) {
+    const dl = doubles.map(s => sizes[s.id]===2 ? s.label : `${s.label}×${sizes[s.id]}`).join(' ');
+    text += `，${dl} double`;
+  }
+  return text;
 }
 
 // ── Routes ─────────────────────────────────────────────────
@@ -450,8 +468,11 @@ function renderRoutes() {
   el.innerHTML = state.routes.map(r => `
     <div class="card">
       <div class="row-header">
-        <input class="input-name" value="${esc(r.name)}" onchange="setRouteName(${r.id},this.value)" placeholder="线路名称"/>
-        <button class="btn btn-danger" onclick="deleteRoute(${r.id})">
+        <div style="display:flex;align-items:baseline;gap:12px;flex:1;min-width:0;overflow:hidden;">
+          <input class="input-name" value="${esc(r.name)}" onchange="setRouteName(${r.id},this.value)" placeholder="线路名称"/>
+          <span id="rsummary-${r.id}" style="font-size:12px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:1;">${routeSummary(r.sizes)}</span>
+        </div>
+        <button class="btn btn-danger" onclick="deleteRoute(${r.id})" style="flex-shrink:0;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
           删除
         </button>
