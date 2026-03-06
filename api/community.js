@@ -32,7 +32,7 @@ function parseRoute(raw) {
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
@@ -61,26 +61,6 @@ export default async function handler(req, res) {
         ['SET', nameKey(name), id, 'EX', ROUTE_TTL],
       ]);
 
-      return res.json({ id });
-    }
-
-    // ── PUT: 合并同名线路（取各号最大值）─────────────────────
-    if (req.method === 'PUT') {
-      const { id, sizes } = req.body || {};
-      if (!id || !sizes) return res.status(400).json({ error: 'id & sizes required' });
-
-      const raw = await redisCmd('GET', `route:${id}`);
-      if (!raw) return res.status(404).json({ error: 'Not found' });
-
-      const existing = parseRoute(raw);
-      const merged = { ...existing.sizes };
-      Object.entries(sizes).forEach(([sid, cnt]) => {
-        merged[sid] = Math.max(merged[sid] || 0, cnt);
-      });
-      existing.sizes = merged;
-      existing.updatedAt = Date.now();
-
-      await redisCmd('SET', `route:${id}`, JSON.stringify(existing), 'EX', ROUTE_TTL);
       return res.json({ id });
     }
 

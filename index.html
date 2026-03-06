@@ -409,30 +409,7 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 <div id="export-frame"></div>
 <div class="toast" id="toast"></div>
 
-<!-- 冲突对比弹窗 -->
-<div id="conflict-mask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;backdrop-filter:blur(4px);" onclick="closeConflict()"></div>
-<div id="conflict-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:201;width:min(480px,92vw);background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:0 24px 64px rgba(0,0,0,0.6);">
-  <div style="font-size:16px;font-weight:700;letter-spacing:-.3px;margin-bottom:4px;">⚠️ 已有同名线路</div>
-  <div id="conflict-routename" style="font-size:13px;color:var(--text-3);margin-bottom:18px;"></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
-    <div>
-      <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:8px;">社区现有</div>
-      <div id="conflict-existing" class="gear-tags" style="gap:4px;"></div>
-    </div>
-    <div>
-      <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:8px;">你的版本</div>
-      <div id="conflict-mine" class="gear-tags" style="gap:4px;"></div>
-    </div>
-  </div>
-  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:18px;">
-    <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:6px;">合并结果（取最大值）</div>
-    <div id="conflict-merged" class="gear-tags" style="gap:4px;"></div>
-  </div>
-  <div style="display:flex;gap:8px;justify-content:flex-end;">
-    <button class="btn btn-ghost" onclick="closeConflict()">取消</button>
-    <button class="btn btn-primary" onclick="doMerge()">合并更新</button>
-  </div>
-</div>
+
 
 <script>
 // ── Sizes ──────────────────────────────────────────────────
@@ -808,10 +785,8 @@ async function shareRoute(id) {
     });
 
     if (res.status === 409) {
-      // 同名冲突 → 弹窗对比
-      const data = await res.json();
       if (btn) { btn.textContent = '分享'; btn.disabled = false; }
-      showConflict(data.existing, r, btn);
+      showToast('社区已有同名线路，请修改名称后重试', 3000);
       return;
     }
 
@@ -824,51 +799,7 @@ async function shareRoute(id) {
   }
 }
 
-function gearTagsHtml(sizes) {
-  return SIZES.filter(s=>(sizes[s.id]||0)>0)
-    .map(s=>`<span class="gear-tag" style="background:${s.color};font-size:11px;">${s.label}×${sizes[s.id]}</span>`)
-    .join('') || '<span style="color:var(--text-3);font-size:12px">无</span>';
-}
 
-function mergeSizes(a, b) {
-  const m = { ...a };
-  Object.entries(b).forEach(([sid,cnt]) => { m[sid] = Math.max(m[sid]||0, cnt); });
-  return m;
-}
-
-function showConflict(existing, mine, btn) {
-  _conflictCtx = { existing, mine, btn };
-  document.getElementById('conflict-routename').textContent = `「${existing.name}」`;
-  document.getElementById('conflict-existing').innerHTML = gearTagsHtml(existing.sizes);
-  document.getElementById('conflict-mine').innerHTML = gearTagsHtml(mine.sizes);
-  document.getElementById('conflict-merged').innerHTML = gearTagsHtml(mergeSizes(existing.sizes, mine.sizes));
-  document.getElementById('conflict-mask').style.display = '';
-  document.getElementById('conflict-modal').style.display = '';
-}
-
-function closeConflict() {
-  _conflictCtx = null;
-  document.getElementById('conflict-mask').style.display = 'none';
-  document.getElementById('conflict-modal').style.display = 'none';
-}
-
-async function doMerge() {
-  if (!_conflictCtx) return;
-  const { existing, mine, btn } = _conflictCtx;
-  closeConflict();
-  try {
-    const res = await fetch('/api/community', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: existing.id, sizes: mine.sizes }),
-    });
-    if (!res.ok) throw new Error();
-    if (btn) { btn.innerHTML = '✓ 已合并'; btn.classList.add('shared'); }
-    showToast('✓ 已合并到社区同名线路');
-  } catch(e) {
-    showToast('合并失败，请重试');
-  }
-}
 
 // ── Community ──────────────────────────────────────────────
 function timeAgo(ts) {
