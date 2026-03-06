@@ -480,6 +480,10 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.11"/></svg>
     下载
   </button>
+  <button onclick="shareTrip()" title="分享行程链接" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--text-3);font-size:12px;display:flex;align-items:center;gap:4px;transition:all 0.15s;" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='var(--text-3)';this.style.borderColor='var(--border)'">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    分享
+  </button>
 </div>
 
 <div class="tabs">
@@ -663,6 +667,19 @@ async function syncUpload() {
     if (!res.ok) throw new Error(res.status);
     showToast('✓ 已上传到云端');
   } catch(e) { showToast('上传失败：' + e.message); }
+}
+
+async function shareTrip() {
+  const code = getOpCode();
+  if (!code) { showToast('请先输入行程代号'); return; }
+  const url = `${location.origin}${location.pathname}?code=${encodeURIComponent(code)}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('✓ 链接已复制，发给队友即可');
+  } catch(e) {
+    // clipboard 不可用时展示链接
+    prompt('复制链接发给队友：', url);
+  }
 }
 
 async function syncDownload() {
@@ -1294,6 +1311,21 @@ renderTeam();
 renderInlineSections();
 loadCommunity();
 initSync();
+
+// URL 自带行程代号时自动下载
+(async function() {
+  const urlCode = new URLSearchParams(location.search).get('code');
+  if (urlCode) {
+    const input = document.getElementById('sync-input');
+    if (input) input.value = urlCode;
+    _syncCode = urlCode;
+    localStorage.setItem('cam-sync-code', urlCode);
+    setHeaderUser(urlCode);
+    await syncDownload();
+    // 清除 URL 参数，避免刷新重复触发
+    history.replaceState(null, '', location.pathname);
+  }
+})();
 
 </script>
 </body>
