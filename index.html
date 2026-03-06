@@ -500,7 +500,10 @@ function renderRoutes() {
 // ── Summary ────────────────────────────────────────────────
 function calcNeeded() {
   const t = {};
-  state.routes.forEach(r => SIZES.forEach(s => { if(r.sizes[s.id]) t[s.id]=(t[s.id]||0)+r.sizes[s.id]; }));
+  // 路线一条条爬，装备可复用 → 每号取各路线最大值
+  state.routes.forEach(r => SIZES.forEach(s => {
+    if (r.sizes[s.id]) t[s.id] = Math.max(t[s.id]||0, r.sizes[s.id]);
+  }));
   return t;
 }
 
