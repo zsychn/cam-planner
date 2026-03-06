@@ -470,7 +470,7 @@ function renderRoutes() {
       <div class="row-header">
         <div style="display:flex;align-items:baseline;gap:12px;flex:1;min-width:0;overflow:hidden;">
           <input class="input-name" value="${esc(r.name)}" onchange="setRouteName(${r.id},this.value)" placeholder="线路名称"/>
-          <span id="rsummary-${r.id}" style="font-size:12px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:1;">${routeSummary(r.sizes)}</span>
+          <span id="rsummary-${r.id}" style="font-size:14px;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:1;letter-spacing:-.2px;">${routeSummary(r.sizes)}</span>
         </div>
         <button class="btn btn-danger" onclick="deleteRoute(${r.id})" style="flex-shrink:0;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
