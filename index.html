@@ -575,7 +575,7 @@ let _syncCode = null; // 实际存的是用户名
 let _syncTimer = null;
 
 function validUsername(s) {
-  return s && s.length >= 3 && s.length <= 20 && /^[\w\u4e00-\u9fa5-]+$/.test(s);
+  return s && s.length >= 2 && s.length <= 30;
 }
 
 async function initSync() {
@@ -650,7 +650,7 @@ function getOpCode() {
 async function syncUpload() {
   const code = getOpCode();
   if (!code) { showToast('请先输入行程代号'); return; }
-  if (!validUsername(code)) { showToast('代号格式不对，3–20位字母/数字/中文'); return; }
+  if (!validUsername(code)) { showToast('行程代号至少 2 位'); return; }
   _syncCode = code;
   localStorage.setItem('cam-sync-code', code);
   setHeaderUser(code);
@@ -668,7 +668,7 @@ async function syncUpload() {
 async function syncDownload() {
   const code = getOpCode();
   if (!code) { showToast('请先输入行程代号'); return; }
-  if (!validUsername(code)) { showToast('代号格式不对，3–20位字母/数字/中文'); return; }
+  if (!validUsername(code)) { showToast('行程代号至少 2 位'); return; }
   _syncCode = code;
   localStorage.setItem('cam-sync-code', code);
   setHeaderUser(code);
@@ -691,7 +691,7 @@ async function confirmUsername() {
   const errEl = document.getElementById('sync-error');
   const name = input.value.trim();
   if (!validUsername(name)) {
-    errEl.textContent = '用户名 3–20 位，只能用字母/数字/中文/连字符';
+    errEl.textContent = '行程代号至少 2 位';
     return;
   }
   errEl.textContent = '验证中…';
