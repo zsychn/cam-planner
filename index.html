@@ -416,54 +416,14 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 </div>
 
 <div class="tabs">
-  <div class="tab active" data-tab="routes">📍 线路</div>
-  <div class="tab" data-tab="summary">📦 总清单</div>
+  <div class="tab active" data-tab="community">🌐 社区</div>
+  <div class="tab" data-tab="routes">📍 线路</div>
   <div class="tab" data-tab="team">👥 队员</div>
-  <div class="tab" data-tab="plan">📋 分配计划</div>
-  <div class="tab" data-tab="community">🌐 社区</div>
 </div>
 
 <div class="content">
 
-  <div class="section active" id="s-routes">
-    <div class="toolbar">
-      <button class="btn btn-primary" onclick="addRoute()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        添加线路
-      </button>
-    </div>
-    <div id="routes-list"></div>
-  </div>
-
-  <div class="section" id="s-summary">
-    <div id="summary-content"></div>
-  </div>
-
-  <div class="section" id="s-team">
-    <div class="toolbar">
-      <button class="btn btn-primary" onclick="addMember()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        添加队员
-      </button>
-    </div>
-    <div id="team-list"></div>
-  </div>
-
-  <div class="section" id="s-plan">
-    <div class="toolbar">
-      <button class="btn btn-ghost" onclick="renderPlan()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-        重新计算
-      </button>
-      <button class="btn btn-export" onclick="exportImage()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        保存图片
-      </button>
-    </div>
-    <div id="plan-content"></div>
-  </div>
-
-  <div class="section" id="s-community">
+  <div class="section active" id="s-community">
     <div class="toolbar" style="margin-bottom:16px;">
       <div style="display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px;gap:2px;">
         <button id="ctab-route" class="btn" style="padding:5px 14px;font-size:12px;background:var(--accent);color:white;border-radius:6px;" onclick="switchCommunityTab('route')">线路</button>
@@ -475,6 +435,33 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
       </button>
     </div>
     <div id="community-list"></div>
+  </div>
+
+  <div class="section" id="s-routes">
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="addRoute()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        添加线路
+      </button>
+      <button class="btn btn-export" onclick="exportImage()" style="margin-left:auto;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        保存图片
+      </button>
+    </div>
+    <div id="routes-list"></div>
+    <!-- 总清单 + 分配计划 内联 -->
+    <div id="inline-summary"></div>
+    <div id="inline-plan"></div>
+  </div>
+
+  <div class="section" id="s-team">
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="addMember()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        添加队员
+      </button>
+    </div>
+    <div id="team-list"></div>
   </div>
 
 </div>
@@ -514,16 +501,20 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 // ── Tabs ───────────────────────────────────────────────────
 document.querySelectorAll('.tab').forEach(t => {
   t.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-    document.querySelectorAll('.section').forEach(x => x.classList.remove('active'));
-    t.classList.add('active');
-    const tab = t.dataset.tab;
-    document.getElementById('s-'+tab).classList.add('active');
-    if (tab === 'summary') renderSummary();
-    if (tab === 'plan') renderPlan();
-    if (tab === 'community') loadCommunity();
+    switchTab(t.dataset.tab);
   });
 });
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(x => x.classList.remove('active'));
+  const tabEl = document.querySelector(`[data-tab="${tabName}"]`);
+  if (tabEl) tabEl.classList.add('active');
+  const secEl = document.getElementById(`s-${tabName}`);
+  if (secEl) secEl.classList.add('active');
+  if (tabName === 'community') loadCommunity();
+  if (tabName === 'routes') renderInlineSections();
+}
 
 // ── Size grid ──────────────────────────────────────────────
 function sizeGrid(type, id, sizes) {
@@ -556,6 +547,7 @@ function chg(type, id, sid, delta) {
     const se = document.getElementById(`msummary-${id}`);
     if (se) se.textContent = routeSummary(obj.sizes);
   }
+  renderInlineSections();
 }
 
 function routeSummary(sizes) {
@@ -572,10 +564,64 @@ function routeSummary(sizes) {
   return text;
 }
 
+// ── Inline Summary + Plan ──────────────────────────────────
+function renderInlineSections() {
+  renderInlineSummary();
+  renderInlinePlan();
+}
+
+function renderInlineSummary() {
+  const el = document.getElementById('inline-summary');
+  if (!el) return;
+  const needed = calcNeeded();
+  const active = SIZES.filter(s => needed[s.id]);
+  if (!active.length) { el.innerHTML = ''; return; }
+  const total = active.reduce((s,c)=>s+needed[c.id],0);
+  el.innerHTML = `
+    <hr class="div" style="margin:20px 0 16px">
+    <div class="sec-title">总清单 · 共 ${total} 个</div>
+    <div class="summary-chips" style="margin-bottom:0">
+      ${active.map(s=>`<div class="summary-chip" style="border-color:${s.color}35">
+        <div class="chip-count" style="color:${s.color}">${needed[s.id]}</div>
+        <div class="chip-label">${s.label}</div>
+      </div>`).join('')}
+    </div>`;
+}
+
+function renderInlinePlan() {
+  const el = document.getElementById('inline-plan');
+  if (!el) return;
+  if (!state.routes.length || !state.team.length) { el.innerHTML = ''; return; }
+  const {assignments, shortages} = calcPlan();
+  let html = `<hr class="div" style="margin:20px 0 16px"><div class="sec-title" style="margin-bottom:12px">分配计划</div>`;
+  shortages.forEach(({s,need,have})=>{
+    html += `<div class="alert">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span><strong>${s.label}</strong> 不足 — 需 ${need} 个，队伍共有 ${have} 个，缺 ${need-have} 个</span>
+    </div>`;
+  });
+  html += state.team.map(m=>{
+    const brings = Object.entries(assignments[m.id]||{});
+    const total = brings.reduce((s,[,v])=>s+v,0);
+    return `<div class="plan-card">
+      <div class="plan-card-head">
+        <span class="plan-name">${esc(m.name)}</span>
+        <span class="plan-badge">携带 ${total} 个</span>
+      </div>
+      <div class="gear-tags">
+        ${brings.length
+          ? brings.map(([sid,cnt])=>{const sz=SIZES.find(s=>s.id===sid);return `<span class="gear-tag" style="background:${sz?.color}">${sz?.label} ×${cnt}</span>`;}).join('')
+          : '<span style="color:var(--text-3);font-size:12px">无需携带</span>'}
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML = html;
+}
+
 // ── Routes ─────────────────────────────────────────────────
 function addRoute() {
   state.routes.push({id:uid(), name:`线路 ${state.routes.length+1}`, sizes:{}, collapsed:false});
-  save(); renderRoutes();
+  save(); renderRoutes(); renderInlineSections();
 }
 
 function toggleRoute(id) {
@@ -591,7 +637,7 @@ function toggleRoute(id) {
 function deleteRoute(id) {
   if (!confirm('删除这条线路？')) return;
   state.routes = state.routes.filter(r => r.id!==id);
-  save(); renderRoutes();
+  save(); renderRoutes(); renderInlineSections();
 }
 function setRouteName(id, name) { const r = state.routes.find(r=>r.id===id); if(r){r.name=name;save();} }
 
@@ -674,7 +720,7 @@ function renderSummary() {
 // ── Team ───────────────────────────────────────────────────
 function addMember() {
   state.team.push({id:uid(), name:`队员 ${state.team.length+1}`, sizes:{}, collapsed:false});
-  save(); renderTeam();
+  save(); renderTeam(); renderInlineSections();
 }
 
 function toggleMember(id) {
@@ -692,7 +738,7 @@ function toggleMember(id) {
 function deleteMember(id) {
   if (!confirm('删除这位队员？')) return;
   state.team = state.team.filter(m=>m.id!==id);
-  save(); renderTeam();
+  save(); renderTeam(); renderInlineSections();
 }
 function setMemberName(id,name) { const m=state.team.find(m=>m.id===id); if(m){m.name=name;save();} }
 
@@ -998,29 +1044,26 @@ function addFromCommunity(route) {
   save();
   switchTab('routes');
   renderRoutes();
+  renderInlineSections();
   showToast(`✓ 已添加「${route.name}」到线路`);
 }
 
 function addMemberFromCommunity(doc) {
-  const newMember = { id: uid(), name: doc.name, sizes: { ...doc.sizes } };
+  const newMember = { id: uid(), name: doc.name, sizes: { ...doc.sizes }, collapsed: true };
   state.team.push(newMember);
   save();
   switchTab('team');
   renderTeam();
+  renderInlineSections();
   showToast(`✓ 已添加「${doc.name}」到队员`);
-}
-
-function switchTab(tabName) {
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
-  document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-  document.getElementById(`s-${tabName}`).classList.add('active');
 }
 
 // ── Init ───────────────────────────────────────────────────
 load();
 renderRoutes();
 renderTeam();
+renderInlineSections();
+loadCommunity();
 </script>
 </body>
 </html>
