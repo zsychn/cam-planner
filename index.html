@@ -329,6 +329,48 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ── Checklist ── */
+.plan-checklist { display: flex; flex-direction: column; gap: 1px; }
+.check-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 8px;
+  cursor: pointer; transition: background 0.15s;
+  user-select: none;
+}
+.check-item:hover { background: var(--surface2); }
+.check-box {
+  width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0;
+  border: 1.5px solid var(--border-hover);
+  background: transparent;
+  transition: background 0.15s, border-color 0.15s;
+  position: relative;
+}
+.check-item.done .check-box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.check-item.done .check-box::after {
+  content: '';
+  position: absolute; top: 2px; left: 5px;
+  width: 5px; height: 9px;
+  border: 2px solid white; border-top: none; border-left: none;
+  transform: rotate(45deg);
+}
+.check-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.check-size {
+  font-size: 13px; font-weight: 700; color: var(--text);
+  min-width: 44px; letter-spacing: -.2px;
+}
+.check-desc {
+  font-size: 13px; color: var(--text-2); flex: 1;
+}
+.check-item.done .check-size,
+.check-item.done .check-desc {
+  opacity: 0.35; text-decoration: line-through;
+}
+
 /* ── Export frame ── */
 #export-frame { position: fixed; top: -9999px; left: 0; z-index: -1; }
 
@@ -597,6 +639,11 @@ function renderInlineSummary() {
     </div>`;
 }
 
+function cntText(n) {
+  const w = ['','一','两','三','四','五','六','七','八','九','十'];
+  return n <= 10 ? `带${w[n]}个` : `带 ${n} 个`;
+}
+
 function renderInlinePlan() {
   const el = document.getElementById('inline-plan');
   if (!el) return;
@@ -610,18 +657,25 @@ function renderInlinePlan() {
     </div>`;
   });
   html += state.team.map(m=>{
-    const brings = Object.entries(assignments[m.id]||{});
-    const total = brings.reduce((s,[,v])=>s+v,0);
+    const brings = Object.entries(assignments[m.id]||{})
+      .map(([sid,cnt])=>({ sz: SIZES.find(s=>s.id===sid), cnt }))
+      .filter(x=>x.sz)
+      .sort((a,b)=> b.cnt - a.cnt || SIZES.findIndex(s=>s.id===a.sz.id) - SIZES.findIndex(s=>s.id===b.sz.id));
+    const total = brings.reduce((s,x)=>s+x.cnt, 0);
     return `<div class="plan-card">
-      <div class="plan-card-head">
+      <div class="plan-card-head" style="margin-bottom:${brings.length?'10px':'0'}">
         <span class="plan-name">${esc(m.name)}</span>
         <span class="plan-badge">携带 ${total} 个</span>
       </div>
-      <div class="gear-tags">
-        ${brings.length
-          ? brings.map(([sid,cnt])=>{const sz=SIZES.find(s=>s.id===sid);return `<span class="gear-tag" style="background:${sz?.color}">${sz?.label} ×${cnt}</span>`;}).join('')
-          : '<span style="color:var(--text-3);font-size:12px">无需携带</span>'}
-      </div>
+      ${brings.length ? `<div class="plan-checklist">
+        ${brings.map(({sz,cnt})=>`
+          <div class="check-item" onclick="this.classList.toggle('done')">
+            <span class="check-box"></span>
+            <span class="check-dot" style="background:${sz.color}"></span>
+            <span class="check-size">${sz.label}</span>
+            <span class="check-desc">${cntText(cnt)}</span>
+          </div>`).join('')}
+      </div>` : '<span style="color:var(--text-3);font-size:12px">无需携带</span>'}
     </div>`;
   }).join('');
   el.innerHTML = html;
