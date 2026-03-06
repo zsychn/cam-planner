@@ -680,12 +680,12 @@ async function shareTrip() {
   const code = getOpCode();
   if (!code) { showToast('请先输入行程代号'); return; }
   const url = `${location.origin}${location.pathname}?code=${encodeURIComponent(code)}`;
+  const text = `本次行程代号「${code}」，点击链接查看本次攀爬计划：\n${url}`;
   try {
-    await navigator.clipboard.writeText(url);
-    showToast('✓ 链接已复制，发给队友即可');
+    await navigator.clipboard.writeText(text);
+    showToast('✓ 已复制，发给队友即可');
   } catch(e) {
-    // clipboard 不可用时展示链接
-    prompt('复制链接发给队友：', url);
+    prompt('复制发给队友：', text);
   }
 }
 
