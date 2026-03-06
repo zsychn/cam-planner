@@ -1081,33 +1081,36 @@ async function shareMember(id) {
 }
 
 // ── Distribution ───────────────────────────────────────────
-function distribute(needed, owners) {
-  const totalAvail = owners.reduce((s,o)=>s+o.has,0);
-  if (!totalAvail) return {};
-  const actual = Math.min(needed, totalAvail);
-  const alloc = owners.map(o=>{const e=actual*o.has/totalAvail;return{id:o.id,floor:Math.floor(e),frac:e%1,has:o.has};});
-  let rem = actual - alloc.reduce((s,a)=>s+a.floor,0);
-  alloc.sort((a,b)=>b.frac-a.frac);
-  alloc.forEach(a=>{if(rem>0&&a.floor<a.has){a.floor++;rem--;}});
-  const res={};
-  alloc.forEach(a=>{if(a.floor>0)res[a.id]=a.floor;});
-  return res;
-}
-
 function calcPlan() {
   const needed = calcNeeded();
   const assignments = {};
-  state.team.forEach(m=>assignments[m.id]={});
+  const totals = {}; // 每人当前总携带数，用于均衡
+  state.team.forEach(m=>{ assignments[m.id]={}; totals[m.id]=0; });
   const shortages = [];
+
   SIZES.forEach(s=>{
     const need = needed[s.id]||0;
     if(!need) return;
+
     const owners = state.team.filter(m=>(m.sizes[s.id]||0)>0).map(m=>({id:m.id,has:m.sizes[s.id]}));
     const totalAvail = owners.reduce((sum,o)=>sum+o.has,0);
     if(totalAvail<need) shortages.push({s,need,have:totalAvail});
-    const dist = distribute(need,owners);
-    Object.entries(dist).forEach(([mid,cnt])=>{assignments[mid][s.id]=cnt;});
+    const actual = Math.min(need, totalAvail);
+
+    // 贪心：每次把一个塞子给当前总携带最少的人（在有货的前提下）
+    const remaining = {};
+    owners.forEach(o=>remaining[o.id]=o.has);
+
+    for(let i=0; i<actual; i++){
+      const eligible = owners.filter(o=>remaining[o.id]>0);
+      eligible.sort((a,b)=>totals[a.id]-totals[b.id]); // 携带少的优先
+      const pick = eligible[0];
+      assignments[pick.id][s.id]=(assignments[pick.id][s.id]||0)+1;
+      totals[pick.id]++;
+      remaining[pick.id]--;
+    }
   });
+
   return {assignments,shortages,needed};
 }
 
