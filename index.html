@@ -456,16 +456,23 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 </div>
 
 <!-- 行动代号栏 -->
-<div id="op-bar" style="background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:10px 20px;">
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-  <span style="font-size:11px;color:var(--text-3);flex-shrink:0;">行动代号</span>
-  <input id="sync-input" placeholder="输入代号加入队伍，队友用同一代号共享装备计划…" maxlength="30"
+<div id="op-bar" style="background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:9px 16px;">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+  <input id="sync-input" placeholder="行动代号…" maxlength="30"
     style="flex:1;background:transparent;border:none;color:var(--accent);font-size:13px;font-weight:700;outline:none;min-width:0;"
     onkeydown="if(event.key==='Enter')confirmUsername()"
     onfocus="document.getElementById('op-bar').style.borderBottomColor='var(--accent)'"
     onblur="document.getElementById('op-bar').style.borderBottomColor='var(--border)'"/>
-  <button id="sync-confirm-btn" class="btn btn-primary" onclick="confirmUsername()" style="flex-shrink:0;display:none;padding:4px 10px;font-size:12px;">加入</button>
   <div id="sync-error" style="font-size:11px;color:#f87171;flex-shrink:0;"></div>
+  <button id="sync-confirm-btn" class="btn btn-primary" onclick="confirmUsername()" style="display:none;padding:5px 12px;font-size:12px;">确认</button>
+  <button onclick="syncUpload()" title="上传到云端" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--text-3);font-size:12px;display:flex;align-items:center;gap:4px;transition:all 0.15s;" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='var(--text-3)';this.style.borderColor='var(--border)'">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+    上传
+  </button>
+  <button onclick="syncDownload()" title="从云端加载" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--text-3);font-size:12px;display:flex;align-items:center;gap:4px;transition:all 0.15s;" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='var(--text-3)';this.style.borderColor='var(--border)'">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.11"/></svg>
+    下载
+  </button>
 </div>
 
 <div class="tabs">
@@ -627,6 +634,33 @@ setTimeout(() => {
 }, 0);
 
 function closeSyncModal() {}
+
+async function syncUpload() {
+  if (!_syncCode) { showToast('请先输入行动代号'); return; }
+  try {
+    const res = await fetch('/api/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: _syncCode, state }),
+    });
+    if (!res.ok) throw new Error();
+    showToast('✓ 已上传到云端');
+  } catch(e) { showToast('上传失败，请重试'); }
+}
+
+async function syncDownload() {
+  if (!_syncCode) { showToast('请先输入行动代号'); return; }
+  try {
+    const res = await fetch(`/api/sync?code=${encodeURIComponent(_syncCode)}`);
+    if (res.status === 404) { showToast('云端暂无数据，请先上传'); return; }
+    if (!res.ok) throw new Error();
+    const { state: remote } = await res.json();
+    state = remote;
+    localStorage.setItem('cam-planner-v1', JSON.stringify(state));
+    renderRoutes(); renderTeam(); renderInlineSections();
+    showToast('✓ 已从云端加载最新数据');
+  } catch(e) { showToast('下载失败，请重试'); }
+}
 
 
 
