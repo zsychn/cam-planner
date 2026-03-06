@@ -455,6 +455,31 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
   <span class="header-title">塞子计划</span>
   <span class="header-sep">/</span>
   <span class="header-sub">Cam Gear Planner</span>
+  <div style="margin-left:auto;">
+    <button id="sync-btn" onclick="openSyncModal()" style="background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text-3);font-size:11px;padding:4px 9px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-3)'">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="sync-code-label">同步中…</span>
+    </button>
+  </div>
+</div>
+
+<!-- 同步码弹窗 -->
+<div id="sync-mask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;backdrop-filter:blur(4px);" onclick="closeSyncModal()"></div>
+<div id="sync-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:201;width:min(380px,90vw);background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:0 24px 64px rgba(0,0,0,0.6);">
+  <div style="font-size:16px;font-weight:700;letter-spacing:-.3px;margin-bottom:4px;">🔑 同步码</div>
+  <div style="font-size:12px;color:var(--text-3);margin-bottom:20px;line-height:1.6;">换设备时输入同样的码，数据自动恢复。请自行保存。</div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
+    <span id="sync-code-display" style="font-size:18px;font-weight:800;letter-spacing:2px;font-family:monospace;color:var(--accent);"></span>
+    <button onclick="copyCode()" style="background:transparent;border:none;color:var(--text-3);cursor:pointer;padding:4px;border-radius:5px;" title="复制">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    </button>
+  </div>
+  <div style="font-size:12px;color:var(--text-3);margin-bottom:8px;">切换到其他账号：</div>
+  <div style="display:flex;gap:8px;">
+    <input id="sync-input" placeholder="输入已有同步码" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')switchCode()"/>
+    <button class="btn btn-primary" onclick="switchCode()">切换</button>
+  </div>
+  <button onclick="closeSyncModal()" class="btn btn-ghost" style="width:100%;margin-top:12px;justify-content:center;">关闭</button>
 </div>
 
 <div class="tabs">
@@ -544,8 +569,102 @@ const SIZES = [
 
 // ── State ──────────────────────────────────────────────────
 let state = {routes:[], team:[], uid:1};
-function save() { try { localStorage.setItem('cam-planner-v1', JSON.stringify(state)); } catch(e) {} }
+
+// ── Sync ───────────────────────────────────────────────────
+const ADJECTIVES = ['blue','peak','rock','iron','swift','bold','free','wild','dawn','sky'];
+const NOUNS      = ['crag','wall','ledge','crack','ridge','pinch','crimp','slab','arete','dihedral'];
+
+function genCode() {
+  const a = ADJECTIVES[Math.floor(Math.random()*ADJECTIVES.length)];
+  const b = NOUNS[Math.floor(Math.random()*NOUNS.length)];
+  const n = Math.floor(Math.random()*900)+100;
+  return `${a}-${b}-${n}`;
+}
+
+let _syncCode = null;
+let _syncTimer = null;
+
+function getSyncCode() {
+  let c = localStorage.getItem('cam-sync-code');
+  if (!c) { c = genCode(); localStorage.setItem('cam-sync-code', c); }
+  return c;
+}
+
+async function initSync() {
+  _syncCode = getSyncCode();
+  const label = document.getElementById('sync-code-label');
+  if (label) label.textContent = _syncCode;
+  const display = document.getElementById('sync-code-display');
+  if (display) display.textContent = _syncCode;
+
+  // 尝试从云端拉取
+  try {
+    const res = await fetch(`/api/sync?code=${encodeURIComponent(_syncCode)}`);
+    if (res.ok) {
+      const { state: remote } = await res.json();
+      if (remote?.routes) {
+        state = remote;
+        renderRoutes(); renderTeam(); renderInlineSections();
+        if (label) label.textContent = _syncCode;
+      }
+    }
+  } catch(e) {}
+}
+
+function save() {
+  try { localStorage.setItem('cam-planner-v1', JSON.stringify(state)); } catch(e) {}
+  // 防抖推送到云端
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(pushSync, 1200);
+}
+
+async function pushSync() {
+  if (!_syncCode) return;
+  try {
+    await fetch('/api/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: _syncCode, state }),
+    });
+  } catch(e) {}
+}
+
 function load() { try { const d = JSON.parse(localStorage.getItem('cam-planner-v1')); if (d?.routes) state = d; } catch(e) {} }
+
+function openSyncModal() {
+  document.getElementById('sync-code-display').textContent = _syncCode;
+  document.getElementById('sync-input').value = '';
+  document.getElementById('sync-mask').style.display = '';
+  document.getElementById('sync-modal').style.display = '';
+}
+function closeSyncModal() {
+  document.getElementById('sync-mask').style.display = 'none';
+  document.getElementById('sync-modal').style.display = 'none';
+}
+function copyCode() {
+  navigator.clipboard?.writeText(_syncCode).then(()=>showToast('✓ 已复制同步码'));
+}
+async function switchCode() {
+  const input = document.getElementById('sync-input');
+  const newCode = input.value.trim();
+  if (!newCode || newCode.length < 6) { showToast('请输入有效的同步码'); return; }
+  try {
+    const res = await fetch(`/api/sync?code=${encodeURIComponent(newCode)}`);
+    if (res.status === 404) { showToast('找不到该同步码，请确认'); return; }
+    if (!res.ok) throw new Error();
+    const { state: remote } = await res.json();
+    if (!remote?.routes) { showToast('数据异常，请重试'); return; }
+    state = remote;
+    _syncCode = newCode;
+    localStorage.setItem('cam-sync-code', newCode);
+    localStorage.setItem('cam-planner-v1', JSON.stringify(state));
+    document.getElementById('sync-code-label').textContent = _syncCode;
+    document.getElementById('sync-code-display').textContent = _syncCode;
+    closeSyncModal();
+    renderRoutes(); renderTeam(); renderInlineSections();
+    showToast('✓ 已切换账号，数据已恢复');
+  } catch(e) { showToast('切换失败，请重试'); }
+}
 function uid() { return state.uid++; }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -1110,6 +1229,7 @@ renderRoutes();
 renderTeam();
 renderInlineSections();
 loadCommunity();
+initSync();
 </script>
 </body>
 </html>
