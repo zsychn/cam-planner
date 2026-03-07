@@ -493,13 +493,13 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 </div>
 
 <div class="tabs">
-  <div class="tab active" data-tab="community">🌐 社区线路</div>
-  <div class="tab" data-tab="routes">📍 本次行程</div>
+  <div class="tab" data-tab="community">🌐 社区线路</div>
+  <div class="tab active" data-tab="routes">📍 本次行程</div>
 </div>
 
 <div class="content">
 
-  <div class="section active" id="s-community">
+  <div class="section" id="s-community">
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
       <div style="display:flex;align-items:center;gap:8px;">
         <div style="display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px;gap:2px;flex-shrink:0;">
@@ -523,7 +523,7 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
     <div id="community-list"></div>
   </div>
 
-  <div class="section" id="s-routes">
+  <div class="section active" id="s-routes">
     <div class="toolbar">
       <button class="btn btn-primary" onclick="addRoute()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1359,6 +1359,7 @@ initSync();
     localStorage.setItem('cam-sync-code', urlCode);
     setHeaderUser(urlCode);
     await syncDownload();
+    switchTab('routes');
     // 清除 URL 参数，避免刷新重复触发
     history.replaceState(null, '', location.pathname);
   }
