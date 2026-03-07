@@ -1293,7 +1293,7 @@ function renderCommunityDocs(docs, q='') {
 
     el.innerHTML = docs.map(doc => {
       const summary = routeSummary(doc.sizes);
-      const btnLabel = type==='route' ? '+ 加到我的线路' : '+ 加到我的队员';
+      const btnLabel = type==='route' ? '+ 添加到本次行程' : '+ 加到我的队员';
       const onclickFn = type==='route' ? 'addFromCommunity' : 'addMemberFromCommunity';
       return `<div class="comm-card">
         <div class="comm-card-head">
